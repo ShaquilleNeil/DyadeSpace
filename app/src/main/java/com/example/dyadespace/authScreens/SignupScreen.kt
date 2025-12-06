@@ -21,6 +21,9 @@ fun SignupScreen(navController: NavController, viewModel: AuthViewModel){
     ){
         //add state variables
         //remember {mutableStateof) = This creates a variable that Compose can watch for changes.
+        var firstName by remember { mutableStateOf("") }
+        var lastName by remember { mutableStateOf("") }
+        var phone by remember { mutableStateOf("") }
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var confirmPassword by remember { mutableStateOf("") }
@@ -33,6 +36,28 @@ fun SignupScreen(navController: NavController, viewModel: AuthViewModel){
         Spacer(Modifier.height(20.dp))
 
         //form fields
+        OutlinedTextField(
+            value = firstName,
+            onValueChange = { firstName = it },
+            label = { Text("First Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = lastName,
+            onValueChange = { lastName = it },
+            label = { Text("Last Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Phone") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -58,7 +83,7 @@ fun SignupScreen(navController: NavController, viewModel: AuthViewModel){
         Button(
             onClick = {
                 if(password == confirmPassword){
-                    viewModel.signUp(email, password)
+                    viewModel.signUp(firstName, lastName, phone, "employee", email, password)
                 } else {
                     viewModel.authMessage.value = "Passwords do not match"
                 }
