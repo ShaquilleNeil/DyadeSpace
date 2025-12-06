@@ -4,12 +4,16 @@ package com.example.dyadespace.authScreens
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.data.supabase.SupabaseClient
+import com.example.dyadespace.data.supabase.SupabaseClient.client
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch //coroutines do work in the background
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 
 
 
@@ -18,6 +22,7 @@ class AuthViewModel : ViewModel() {
 
     private val _authMessage = MutableStateFlow<String?>(null) //mutable state flow, a value that can change over time
     val authMessage = _authMessage //the underscore means only a viewmodel can change this variable(it's liek a toast)
+    var currentEmployee = MutableStateFlow<Employee?>(null) //value to pass to screens
 
 
 
@@ -80,11 +85,64 @@ class AuthViewModel : ViewModel() {
                 }
                 _authMessage.value = "Sign in successful"
 
+
             } catch (e: Exception){
                 _authMessage.value = e.message
             }
 
         }
     }
+
+    fun setMessage(msg: String) {
+        _authMessage.value = msg
+    }
+
+
+    //we need something to wait for the response because it is not immediate : onResult (a callback function)
+    fun fetchRole(onResult:(Employee?) -> Unit){
+        viewModelScope.launch {
+            try {
+                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+                    ?: return@launch onResult(null)
+
+
+                val employee = SupabaseClient.client.postgrest["employees"]
+                    .select(
+                        columns = Columns.list(
+                            "EID",
+                            "Employee_fn",
+                            "Employee_ln",
+                            "Employee_phone",
+                            "Employee_email",
+                            "role",
+                            "Avatar_url",
+                            "created_at"
+                        )
+                    ){
+                        filter{
+                            eq("EID", userId)
+                        }
+
+                    }
+                    .decodeSingle<Employee>()
+
+
+
+
+                println("🟢 Employee row = $employee")
+                println("🟢 Employee role = ${employee?.role}")
+                currentEmployee.value = employee
+                onResult(employee)
+
+            } catch(e: Exception) {
+                e.printStackTrace()
+                onResult(null)
+            }
+        }
+    }
+
+
+
+
 
 }

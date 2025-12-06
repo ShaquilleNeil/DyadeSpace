@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
 
 android {
@@ -67,12 +69,19 @@ dependencies {
 
     //implementing supabase
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.2.6")
+//    implementation("io.github.jan-tennert.supabase:postgrest-kt-extensions:3.2.6")
+
     implementation("io.github.jan-tennert.supabase:auth-kt:3.2.6")
     implementation("io.github.jan-tennert.supabase:storage-kt:3.2.6")
     implementation("io.github.jan-tennert.supabase:realtime-kt:3.2.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("io.ktor:ktor-client-okhttp:3.3.3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.material3:material3:1.0.0-alpha12")
+    implementation("androidx.compose.material3:material3-window-size-class:1.0.0-alpha12")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 
 
 

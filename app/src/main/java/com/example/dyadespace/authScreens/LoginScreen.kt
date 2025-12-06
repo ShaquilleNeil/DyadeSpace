@@ -47,23 +47,38 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Button(
             onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty()) {  //validation
-                    viewModel.logIn(email, password)
-
-                    //Navigate only if login worked
-                    if (viewModel.authMessage.value == "Sign in successful") {
-                        navController.navigate("home")
-                    }
+                if (email.isNotEmpty() && password.isNotEmpty()) {
+                    viewModel.logIn(email, password)   // Just trigger login, no nav here
                 } else {
-                    viewModel.authMessage.value = "Please enter email and password"
+                    viewModel.setMessage("Please enter email and password")
                 }
             },
-            modifier = Modifier
-                .width(200.dp)
-                .padding(top = 16.dp)
+            modifier = Modifier.width(200.dp).padding(top = 16.dp)
         ) {
             Text("Login")
         }
+
+
+        // 🔥 Wait for auth result and navigate when success happens
+        LaunchedEffect(message) {
+            if (message == "Sign in successful") {
+
+                viewModel.fetchRole { employee ->
+
+                    if (employee?.role == "manager") {
+                        navController.navigate("ManagerMainScreen") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("TestConnectionScreen") {  // later create an employee home screen
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                }
+            }
+        }
+
+
 
         Spacer(Modifier.height(16.dp))
 
