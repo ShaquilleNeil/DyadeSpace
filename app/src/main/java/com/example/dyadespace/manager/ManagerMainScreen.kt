@@ -9,9 +9,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dyadespace.classes.BottomNavigation
 
 @Composable
-fun ManagerMainScreen() {
+fun ManagerMainScreen(mainNavController: NavHostController) {
 
-    val managerNavController = rememberNavController()
+    val managerNavController = rememberNavController() //gets it's own nav controller
 
 
     Scaffold(
@@ -21,6 +21,7 @@ fun ManagerMainScreen() {
     ) { innerPadding ->
         ManagerNavhost(
             navController = managerNavController,
+            mainNavController = mainNavController, //pass this to enable logout to come back from second nav host
             modifier = Modifier.padding(innerPadding)
         )
     }

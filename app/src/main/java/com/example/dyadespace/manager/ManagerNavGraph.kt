@@ -10,9 +10,10 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.classes.BottomNavItem
 
 @Composable
-fun ManagerNavhost(navController: NavHostController, modifier: Modifier = Modifier) {
+fun ManagerNavhost(navController: NavHostController, mainNavController: NavHostController, modifier: Modifier = Modifier) {
 
-    val viewModel: AuthViewModel = viewModel()
+    val viewModel: AuthViewModel = viewModel() //brings the viewmodel into the composable for currentemployee
+
 
 
     NavHost(
@@ -21,7 +22,7 @@ fun ManagerNavhost(navController: NavHostController, modifier: Modifier = Modifi
         modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) { ManagerHome(viewModel) }
-        composable(BottomNavItem.Profile.route) { ManagerProfile() }
+        composable(BottomNavItem.Profile.route) { ManagerProfile(viewModel, mainNavController) } //navcontroller is innner nav and mainnavcontroller is global
         composable(BottomNavItem.Projects.route) { ManagerProjects() }
         composable(BottomNavItem.Tasks.route) { ManagerTasks() }
     }

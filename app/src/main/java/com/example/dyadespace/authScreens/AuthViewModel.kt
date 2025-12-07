@@ -1,12 +1,10 @@
 package com.example.dyadespace.authScreens
 
 //view model scopes to begin auths
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.data.supabase.SupabaseClient
-import com.example.dyadespace.data.supabase.SupabaseClient.client
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch //coroutines do work in the background
@@ -14,15 +12,16 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
-
-
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 
 class AuthViewModel : ViewModel() {
 
     private val _authMessage = MutableStateFlow<String?>(null) //mutable state flow, a value that can change over time
     val authMessage = _authMessage //the underscore means only a viewmodel can change this variable(it's liek a toast)
-    var currentEmployee = MutableStateFlow<Employee?>(null) //value to pass to screens
+    private val _currentEmployee = MutableStateFlow<Employee?>(null)
+    val currentEmployee: StateFlow<Employee?> = _currentEmployee.asStateFlow() //value to pass to screens
 
 
 
@@ -93,7 +92,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun setMessage(msg: String) {
+    fun setMessage(msg: String?) {
         _authMessage.value = msg
     }
 
@@ -131,7 +130,9 @@ class AuthViewModel : ViewModel() {
 
                 println("🟢 Employee row = $employee")
                 println("🟢 Employee role = ${employee?.role}")
-                currentEmployee.value = employee
+                _currentEmployee.value = employee //stored information to send
+                println("🟢 _currentEmployee = ${_currentEmployee.value}")
+
                 onResult(employee)
 
             } catch(e: Exception) {
@@ -142,7 +143,25 @@ class AuthViewModel : ViewModel() {
     }
 
 
+    fun setFakeEmployee(emp: Employee) {
+        _currentEmployee.value = emp
+    }
 
 
+
+    fun signOut() {
+        viewModelScope.launch {
+            try {
+                SupabaseClient.client.auth.signOut()
+                _authMessage.value = "Sign out successful"
+                _currentEmployee.value = null
+            } catch (e: Exception) {
+                _authMessage.value = e.message
+
+            }
+
+
+        }
+    }
 
 }

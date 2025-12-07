@@ -36,8 +36,8 @@ fun AppNavGraph() {
             )
         }
 
-        composable("ManagerMainScreen") {
-            ManagerMainScreen()
+        composable("manager") {
+            ManagerMainScreen(mainNavController = navController) //passing this to enable logout to come back from second nav host
         }
 
         composable("TestConnectionScreen") {

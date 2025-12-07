@@ -10,7 +10,7 @@ sealed class BottomNavItem(
 ) { //A sealed class in Kotlin is like a smart enum on steroids — it allows you to define a restricted set of possible types/states, but each type can carry data.
 
    // object is used when that state has no data attached and we only need one instance of it.
-    //we are creating the nav items here
+    //we are creating the nav items here and also the destinations and order
     object Home: BottomNavItem("ManagerHome","Home", R.drawable.baseline_home_24)
     object Projects: BottomNavItem("ManagerProjects","Projects", R.drawable.baseline_work_24)
     object Tasks: BottomNavItem("ManagerTasks","Tasks", R.drawable.baseline_task_24)

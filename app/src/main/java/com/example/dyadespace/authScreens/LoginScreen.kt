@@ -8,7 +8,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 
 
@@ -17,7 +16,8 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val message by viewModel.authMessage.collectAsState() //oberve viewmodel messages
+    val message: String? by viewModel.authMessage.collectAsState()
+//oberve viewmodel messages
 
 
 
@@ -63,15 +63,19 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         LaunchedEffect(message) {
             if (message == "Sign in successful") {
 
-                viewModel.fetchRole { employee ->
+                // Reset message so it doesn't trigger again later
+                viewModel.setMessage(null)
 
+                viewModel.fetchRole { employee ->
                     if (employee?.role == "manager") {
-                        navController.navigate("ManagerMainScreen") {
+                        navController.navigate("manager") {
                             popUpTo("login") { inclusive = true }
+                            launchSingleTop = true
                         }
                     } else {
-                        navController.navigate("TestConnectionScreen") {  // later create an employee home screen
+                        navController.navigate("TestConnectionScreen") {
                             popUpTo("login") { inclusive = true }
+                            launchSingleTop = true
                         }
                     }
                 }
@@ -80,13 +84,12 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
 
 
+
         Spacer(Modifier.height(16.dp))
 
 
-        val message = viewModel.authMessage.collectAsState().value // Listens for updates coming from ViewModel
-        if (message != null) {
-            Text(message, color = MaterialTheme.colorScheme.primary)
-        }
+//        val message = viewModel.authMessage.collectAsState().value // Listens for updates coming from ViewModel
+        message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
 
         //link to sign up screen
 
