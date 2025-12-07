@@ -6,6 +6,8 @@
 ![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Status](https://img.shields.io/badge/Status-In_Development-orange)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+
 
 
 ### Tech Stack
@@ -21,6 +23,7 @@
 ### Roadmap
 - [x] Supabase connection test
 - [x] Email/Password Authentication (in progress)
+- [x] profile logout
 - [ ] Employee/Task database integration
 - [ ] Manager dashboard
 - [ ] Real-time updates
