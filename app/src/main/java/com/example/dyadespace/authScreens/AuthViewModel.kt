@@ -96,6 +96,43 @@ class AuthViewModel : ViewModel() {
         _authMessage.value = msg
     }
 
+    //update employee in database
+    fun updateEmployee(employee: Employee?) {
+        viewModelScope.launch {
+            try{
+                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+                    ?: throw Exception("User not authenticated")
+
+
+                SupabaseClient.client.postgrest["employees"].update(
+                    mapOf(
+                        "Employee_fn" to employee?.Employee_fn,
+                        "Employee_ln" to employee?.Employee_ln,
+                        "Employee_phone" to employee?.Employee_phone,
+                        "Employee_email" to employee?.Employee_email,
+                        "role" to employee?.role,
+                        "Avatar_url" to employee?.Avatar_url
+
+                    )
+                ){
+                        filter{
+                            eq("EID", userId)
+                        }
+
+                    }
+                _authMessage.value = "Update successful"
+                _currentEmployee.value = employee
+
+
+
+
+            }catch (e: Exception){
+                _authMessage.value = e.message
+            }
+        }
+
+    }
+
 
     //we need something to wait for the response because it is not immediate : onResult (a callback function)
     fun fetchRole(onResult:(Employee?) -> Unit){
@@ -163,5 +200,7 @@ class AuthViewModel : ViewModel() {
 
         }
     }
+
+
 
 }

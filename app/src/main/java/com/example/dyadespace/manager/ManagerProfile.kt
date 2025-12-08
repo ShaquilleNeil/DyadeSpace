@@ -29,10 +29,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.net.Uri
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 
 
 @Composable
@@ -43,18 +45,8 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
     var lastName by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(false) }
-
-
-    // Image picker launcher inside composable
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val imageUri: Uri? = result.data?.data
-            println("Selected image URI: $imageUri")
-            // TODO → Upload to Supabase Storage next
-        }
-    }
+    var role by remember { mutableStateOf("") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
 
 
@@ -68,13 +60,29 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
     //load employee into ui state to assign to variables
     LaunchedEffect(employee) {
         employee?.let {
+
             firstName = it.Employee_fn ?: ""
             lastName = it.Employee_ln ?: ""
             email = it.Employee_email ?: ""
             phone = it.Employee_phone ?: ""
+            role = it.role ?: ""
+
+            imageUri = Uri.parse(it.Avatar_url)
         }
     }
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val selectedUri = result.data?.data
+            imageUri = selectedUri     // <-- store result here
+            println("Selected image URI: $selectedUri")
+
+            // Later: Upload to Supabase Storage
+
+        }
+    }
 
 
     Column(
@@ -84,12 +92,22 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
 
     ) {
+        AsyncImage(
+            model = imageUri ?: "", // fallback image
+            contentDescription = "Profile Image",
+            modifier = Modifier
+                .size(120.dp)
+                .padding(8.dp)
+        )
+
 
         if (isEditing) {
             Button(
                 onClick = {
                     val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                     imagePickerLauncher.launch(intent)
+
+                    //store the image uri
 
 
                 },
@@ -141,7 +159,22 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
         Button(
             onClick = {
-                isEditing = !isEditing
+                if (isEditing) {
+                    // <- only update when we are SAVING
+                    val updatedEmployee = employee?.copy(
+                        Employee_fn = firstName,
+                        Employee_ln = lastName,
+                        Employee_phone = phone,
+                        Employee_email = email,
+                        role = role,   // if role is editable
+                        Avatar_url = imageUri?.toString()
+                    )
+                    viewModel.updateEmployee(updatedEmployee)
+                    viewModel.setMessage("Update successful")
+
+                }
+
+                isEditing = !isEditing // <-- toggle after save logic
             },
             modifier = Modifier.fillMaxWidth()
         ) {
