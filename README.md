@@ -8,6 +8,8 @@
 ![Status](https://img.shields.io/badge/Status-In_Development-orange)
 
 
+
+
 ### Tech Stack
 - Android (Kotlin + Jetpack Compose)
 - Supabase (Auth, Database, Realtime)
@@ -21,6 +23,7 @@
 ### Roadmap
 - [x] Supabase connection test
 - [x] Email/Password Authentication (in progress)
+- [x] profile logout
 - [ ] Employee/Task database integration
 - [ ] Manager dashboard
 - [ ] Real-time updates
