@@ -4,6 +4,7 @@ package com.example.dyadespace.authScreens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dyadespace.classes.Employee
+import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.data.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,15 @@ class AuthViewModel : ViewModel() {
     val authMessage = _authMessage //the underscore means only a viewmodel can change this variable(it's liek a toast)
     private val _currentEmployee = MutableStateFlow<Employee?>(null)
     val currentEmployee: StateFlow<Employee?> = _currentEmployee.asStateFlow() //value to pass to screens
+     private val _employees = MutableStateFlow<List<Employee>>(emptyList())
+    val employees: StateFlow<List<Employee>> = _employees.asStateFlow()
+    private val _tasks = MutableStateFlow<List<Tasks>>(emptyList())
+    val tasks: StateFlow<List<Tasks>> = _tasks.asStateFlow()
+
+
+
+
+
 
 
 
@@ -133,6 +143,34 @@ class AuthViewModel : ViewModel() {
 
     }
 
+
+    fun fetchAllEmployees() {
+        viewModelScope.launch {
+            try{
+                val employees = SupabaseClient.client.postgrest["employees"].select().decodeList<Employee>()
+                _employees.value = employees
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    fun fetchAllTasks() {
+        viewModelScope.launch {
+            try{
+                val tasks = SupabaseClient.client.postgrest["tasks"].select().decodeList<Tasks>()
+                _tasks.value = tasks
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+        }
+    }
 
     //we need something to wait for the response because it is not immediate : onResult (a callback function)
     fun fetchRole(onResult:(Employee?) -> Unit){

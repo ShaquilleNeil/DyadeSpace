@@ -22,8 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.classes.Employee
 import coil.compose.AsyncImage
-
-
+import androidx.compose.foundation.lazy.items
+import com.example.dyadespace.classes.Tasks
+import com.example.dyadespace.viewitems.TaskItem
 
 
 @Composable
@@ -32,13 +33,19 @@ fun ManagerHome(viewModel: AuthViewModel){
     //runs once the screen loads to fire the fetch role again
     LaunchedEffect(Unit) {
         viewModel.fetchRole { }
+        viewModel.fetchAllEmployees()
+        viewModel.fetchAllTasks()
     }
     val employee = viewModel.currentEmployee.collectAsState().value
+    val employees = viewModel.employees.collectAsState().value
+    val tasks = viewModel.tasks.collectAsState().value
+
+
     println("🟢 ManagerHome employee = $employee")
 
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())
+        modifier = Modifier.fillMaxSize().padding(24.dp)
 
     ){
         Row(
@@ -91,11 +98,53 @@ fun ManagerHome(viewModel: AuthViewModel){
         }
 
         Text("Recent Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
-//        LazyColumn(modifier = Modifier.fillMaxWidth()) {}
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+              items(tasks) { tsk ->
+                  TaskItem(tsk)
+              }
+        }
+
+//        Text("Employee List", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+//        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+//            items(employees) { emp ->
+//                EmployeeItem(emp)
+//            }
+//        }
 
 
     }
 }
+
+//@Composable
+//fun EmployeeItem(emp: Employee) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 16.dp, vertical = 8.dp),
+//        elevation = CardDefaults.cardElevation(4.dp)
+//    ) {
+//        Column(modifier = Modifier.padding(16.dp)) {
+//
+//            Text(
+//                text = "${emp.Employee_fn} ${emp.Employee_ln}",
+//                style = MaterialTheme.typography.titleMedium
+//            )
+//
+//            Text(
+//                text = emp.Employee_email ?: "",
+//                style = MaterialTheme.typography.bodyMedium,
+//                modifier = Modifier.padding(top = 6.dp)
+//            )
+//
+//            Text(
+//                text = emp.role ?: "",
+//                style = MaterialTheme.typography.labelMedium,
+//                modifier = Modifier.padding(top = 4.dp)
+//            )
+//        }
+//    }
+//}
+
 
 
 @Preview(showBackground = true)
