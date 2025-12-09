@@ -23,7 +23,6 @@ fun ManagerNavhost(navController: NavHostController, mainNavController: NavHostC
     ) {
         composable(BottomNavItem.Home.route) { ManagerHome(viewModel) }
         composable(BottomNavItem.Profile.route) { ManagerProfile(viewModel, mainNavController) } //navcontroller is innner nav and mainnavcontroller is global
-        composable(BottomNavItem.Projects.route) { ManagerProjects() }
         composable(BottomNavItem.Tasks.route) { ManagerTasks() }
     }
 }

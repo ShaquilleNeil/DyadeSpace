@@ -6,6 +6,11 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.Storage
 
+
+
+
+
+
 object SupabaseClient {
 
     private val SUPABASE_URL = BuildConfig.SUPABASE_URL
@@ -15,7 +20,11 @@ object SupabaseClient {
         supabaseUrl = SUPABASE_URL,
         supabaseKey = SUPABASE_KEY
     ) {
-        install(Auth)
+        install(Auth){
+            autoLoadFromStorage = true
+
+
+        }
         install(Postgrest)
         install(Storage)
     }

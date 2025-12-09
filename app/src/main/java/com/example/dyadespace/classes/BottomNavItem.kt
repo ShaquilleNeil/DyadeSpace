@@ -12,8 +12,8 @@ sealed class BottomNavItem(
    // object is used when that state has no data attached and we only need one instance of it.
     //we are creating the nav items here and also the destinations and order
     object Home: BottomNavItem("ManagerHome","Home", R.drawable.baseline_home_24)
-    object Projects: BottomNavItem("ManagerProjects","Projects", R.drawable.baseline_work_24)
-    object Tasks: BottomNavItem("ManagerTasks","Tasks", R.drawable.baseline_task_24)
+
+    object Tasks: BottomNavItem("ManagerTasks","My Tasks", R.drawable.baseline_task_24)
 
     object Profile: BottomNavItem("ManagerProfile","Profile", R.drawable.baseline_person_24)
 }

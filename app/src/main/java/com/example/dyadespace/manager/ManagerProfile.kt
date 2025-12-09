@@ -30,8 +30,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.net.Uri
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -98,6 +101,8 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
             modifier = Modifier
                 .size(120.dp)
                 .padding(8.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
         )
 
 
@@ -169,7 +174,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                         role = role,   // if role is editable
                         Avatar_url = imageUri?.toString()
                     )
-                    viewModel.updateEmployee(updatedEmployee)
+                    viewModel.updateEmployee(updatedEmployee, imageUri)
                     viewModel.setMessage("Update successful")
 
                 }

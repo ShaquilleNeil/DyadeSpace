@@ -4,6 +4,7 @@ package com.example.dyadespace.authScreens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dyadespace.classes.Employee
+import com.example.dyadespace.classes.Projects
 import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.data.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -15,9 +16,18 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
+import android.net.Uri
+import com.example.dyadespace.MyApp
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.InputStream
 
 class AuthViewModel : ViewModel() {
+
+
 
     private val _authMessage = MutableStateFlow<String?>(null) //mutable state flow, a value that can change over time
     val authMessage = _authMessage //the underscore means only a viewmodel can change this variable(it's liek a toast)
@@ -28,6 +38,21 @@ class AuthViewModel : ViewModel() {
     private val _tasks = MutableStateFlow<List<Tasks>>(emptyList())
     val tasks: StateFlow<List<Tasks>> = _tasks.asStateFlow()
 
+    private val _projects = MutableStateFlow<List<Projects>>(emptyList())
+    val projects: StateFlow<List<Projects>> = _projects.asStateFlow()
+
+
+    private val _isLoggedIn = mutableStateOf(false)
+    val isLoggedIn: State<Boolean> = _isLoggedIn
+
+    init {
+        checkSession() // runs on app launch
+    }
+
+    fun checkSession() {
+        val session = SupabaseClient.client.auth.currentSessionOrNull()
+        _isLoggedIn.value = session != null
+    }
 
 
 
@@ -95,6 +120,7 @@ class AuthViewModel : ViewModel() {
                 _authMessage.value = "Sign in successful"
 
 
+                checkSession()
             } catch (e: Exception){
                 _authMessage.value = e.message
             }
@@ -107,12 +133,45 @@ class AuthViewModel : ViewModel() {
     }
 
     //update employee in database
-    fun updateEmployee(employee: Employee?) {
+
+    suspend fun uploadProfileImage(newUri: Uri, oldUrl: String?): String {
+        // Convert local image -> ByteArray
+        val bytes = withContext(Dispatchers.IO) {
+            MyApp.appContext.contentResolver.openInputStream(newUri)?.readBytes()
+                ?: throw Exception("Could not read file")
+        }
+
+        // Extract filename (unique)
+        val fileName = "${System.currentTimeMillis()}.jpg"
+
+        val bucket = SupabaseClient.client.storage.from("employee_profilepic")
+
+        // 🗑 delete previous file if exists
+        if (!oldUrl.isNullOrEmpty()) {
+            val oldPath = oldUrl.substringAfter("employee_profilepic/") // extract storage path
+            bucket.delete(oldPath)
+        }
+
+        // Upload replacement
+        bucket.upload("avatars/$fileName", bytes)
+
+        // Get new public URL
+        return bucket.publicUrl("avatars/$fileName")
+    }
+
+
+    fun updateEmployee(employee: Employee?, newImageUri: Uri?) {
         viewModelScope.launch {
-            try{
+            try {
                 val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
                     ?: throw Exception("User not authenticated")
 
+                var avatarUrl = employee?.Avatar_url
+
+                // Only upload if user selected a new image
+                if (newImageUri != null) {
+                    avatarUrl = uploadProfileImage(newImageUri, oldUrl = avatarUrl)
+                }
 
                 SupabaseClient.client.postgrest["employees"].update(
                     mapOf(
@@ -121,27 +180,22 @@ class AuthViewModel : ViewModel() {
                         "Employee_phone" to employee?.Employee_phone,
                         "Employee_email" to employee?.Employee_email,
                         "role" to employee?.role,
-                        "Avatar_url" to employee?.Avatar_url
-
+                        "Avatar_url" to avatarUrl
                     )
-                ){
-                        filter{
-                            eq("EID", userId)
-                        }
+                ) {
+                    filter { eq("EID", userId) }
+                }
 
-                    }
-                _authMessage.value = "Update successful"
-                _currentEmployee.value = employee
+                _currentEmployee.value = employee?.copy(Avatar_url = avatarUrl)
+                _authMessage.value = "Profile Updated"
 
-
-
-
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 _authMessage.value = e.message
             }
         }
-
     }
+
+
 
 
     fun fetchAllEmployees() {
@@ -169,6 +223,18 @@ class AuthViewModel : ViewModel() {
                 e.printStackTrace()
             }
 
+        }
+    }
+
+    fun fetchAllProjects(){
+        viewModelScope.launch {
+            try {
+                val projects = SupabaseClient.client.postgrest["projects"].select().decodeList<Projects>()
+                _projects.value = projects
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

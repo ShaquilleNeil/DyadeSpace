@@ -14,13 +14,13 @@ import com.example.dyadespace.manager.ManagerMainScreen
 @Composable
 fun AppNavGraph() {
 
-    // This is the ONE navController for the whole app
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
+    val isLoggedIn = authViewModel.isLoggedIn.value
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = if (isLoggedIn) "manager" else "login"
     ) {
         composable("login") {
             LoginScreen(
@@ -37,7 +37,7 @@ fun AppNavGraph() {
         }
 
         composable("manager") {
-            ManagerMainScreen(mainNavController = navController) //passing this to enable logout to come back from second nav host
+            ManagerMainScreen(mainNavController = navController)
         }
 
         composable("TestConnectionScreen") {

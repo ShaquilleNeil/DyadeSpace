@@ -7,24 +7,32 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+
 
 @Composable
 fun BottomNavigation(navController: NavHostController) {
 
     val items = listOf(
         BottomNavItem.Home,
-        BottomNavItem.Projects,
         BottomNavItem.Tasks,
         BottomNavItem.Profile
     )
+
+
+    // 🔥 observe backstack as State so it recomposes
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar {
         items.forEach { item ->
             AddItem(
                 screen = item,
-                navController = navController
+                navController = navController,
+                currentRoute = currentRoute
             )
         }
     }
@@ -33,10 +41,9 @@ fun BottomNavigation(navController: NavHostController) {
 @Composable
 fun RowScope.AddItem(
     screen: BottomNavItem,
-    navController: NavHostController
+    navController: NavHostController,
+    currentRoute: String?
 ) {
-    val currentRoute = navController.currentBackStackEntry?.destination?.route
-
     NavigationBarItem(
         label = { Text(text = screen.title) },
         icon = {

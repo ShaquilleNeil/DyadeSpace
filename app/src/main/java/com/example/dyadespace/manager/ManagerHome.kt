@@ -24,6 +24,7 @@ import com.example.dyadespace.classes.Employee
 import coil.compose.AsyncImage
 import androidx.compose.foundation.lazy.items
 import com.example.dyadespace.classes.Tasks
+import com.example.dyadespace.viewitems.ProjectItem
 import com.example.dyadespace.viewitems.TaskItem
 
 
@@ -35,10 +36,13 @@ fun ManagerHome(viewModel: AuthViewModel){
         viewModel.fetchRole { }
         viewModel.fetchAllEmployees()
         viewModel.fetchAllTasks()
+        viewModel.fetchAllProjects()
     }
     val employee = viewModel.currentEmployee.collectAsState().value
     val employees = viewModel.employees.collectAsState().value
     val tasks = viewModel.tasks.collectAsState().value
+    val projects = viewModel.projects.collectAsState().value
+
 
 
     println("🟢 ManagerHome employee = $employee")
@@ -48,61 +52,21 @@ fun ManagerHome(viewModel: AuthViewModel){
         modifier = Modifier.fillMaxSize().padding(24.dp)
 
     ){
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = employee?.Avatar_url ?: "",
-                    contentDescription = "Avatar",
-                    modifier = Modifier.size(80.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column {
-                    Text("${employee?.Employee_fn} ${employee?.Employee_ln}", style = MaterialTheme.typography.titleMedium)
-                    Text(employee?.role ?: "none", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text("Email: ${employee?.Employee_email}")
-            Spacer(modifier = Modifier.weight(1f))
-            Text("Phone: ${employee?.Employee_phone}")
-        }
-
-        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { /*TODO*/ }, modifier = Modifier.weight(1f)
-                .clip(CircleShape)) {
-                Text("Projects")
-            }
-            Button(onClick = { /*TODO*/ }, modifier = Modifier.weight(1f)
-                .clip(CircleShape)) {
-                Text("Projects")
-            }
-            Button(onClick = { /*TODO*/ }, modifier = Modifier.weight(1f)
-                .clip(CircleShape)) {
-                Text("Projects")
-            }
-            Button(onClick = { /*TODO*/ }, modifier = Modifier.weight(1f)
-                .clip(CircleShape)) {
-                Text("Projects")
-            }
-
-        }
-
-        Text("Recent Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+        Text("Projects", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-              items(tasks) { tsk ->
-                  TaskItem(tsk)
-              }
+            items(projects) { prj ->
+                ProjectItem(prj)
+            }
         }
+
+
+//        Text("Recent Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+//        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+//              items(tasks) { tsk ->
+//                  TaskItem(tsk)
+//              }
+//        }
 
 //        Text("Employee List", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
 //        LazyColumn(modifier = Modifier.fillMaxWidth()) {
