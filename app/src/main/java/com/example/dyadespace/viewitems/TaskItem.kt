@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.dyadespace.classes.Tasks
 
 @Composable
-fun TaskItem(tsk: Tasks) {
+fun TaskItem(tsk: Tasks ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

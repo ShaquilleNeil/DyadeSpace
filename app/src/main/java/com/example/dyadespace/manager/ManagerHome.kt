@@ -40,7 +40,7 @@ fun ManagerHome(viewModel: AuthViewModel){
     }
     val employee = viewModel.currentEmployee.collectAsState().value
     val employees = viewModel.employees.collectAsState().value
-    val tasks = viewModel.tasks.collectAsState().value
+    val tasks = viewModel.allTasks.collectAsState().value
     val projects = viewModel.projects.collectAsState().value
 
 

@@ -20,10 +20,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import android.net.Uri
 import com.example.dyadespace.MyApp
+import com.example.dyadespace.classes.EmployeeTask
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+
+
 
 class AuthViewModel : ViewModel() {
 
@@ -35,8 +38,16 @@ class AuthViewModel : ViewModel() {
     val currentEmployee: StateFlow<Employee?> = _currentEmployee.asStateFlow() //value to pass to screens
      private val _employees = MutableStateFlow<List<Employee>>(emptyList())
     val employees: StateFlow<List<Employee>> = _employees.asStateFlow()
-    private val _tasks = MutableStateFlow<List<Tasks>>(emptyList())
-    val tasks: StateFlow<List<Tasks>> = _tasks.asStateFlow()
+    private val _allTasks = MutableStateFlow<List<Tasks>>(emptyList())
+    val allTasks = _allTasks.asStateFlow()
+
+    private val _myTasks = MutableStateFlow<List<Tasks>>(emptyList())
+    val myTasks = _myTasks.asStateFlow()
+
+
+    private val _assignedTasks = MutableStateFlow<List<EmployeeTask>>(emptyList())
+    val assignedTasks = _assignedTasks.asStateFlow()
+
 
     private val _projects = MutableStateFlow<List<Projects>>(emptyList())
     val projects: StateFlow<List<Projects>> = _projects.asStateFlow()
@@ -212,19 +223,72 @@ class AuthViewModel : ViewModel() {
     }
 
 
+    // Fetch every task in the system (Manager view)
     fun fetchAllTasks() {
         viewModelScope.launch {
-            try{
-                val tasks = SupabaseClient.client.postgrest["tasks"].select().decodeList<Tasks>()
-                _tasks.value = tasks
+            try {
+                val tasks = SupabaseClient.client.postgrest["tasks"]
+                    .select()
+                    .decodeList<Tasks>()
 
+                _allTasks.value = tasks
 
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
         }
     }
+
+    // Fetch only tasks assigned to currently logged-in employee
+    fun fetchMyTasks() {
+        viewModelScope.launch {
+            try {
+                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+                    ?: throw Exception("User not authenticated")
+
+                // 1️⃣ Get employee_task links
+                val assigned = SupabaseClient.client.postgrest["employee_tasks"]
+                    .select(columns = Columns.list("id", "EID")) {
+                        filter { eq("EID", userId) }
+                    }
+                    .decodeList<EmployeeTask>()
+
+                val taskIds = assigned.map { it.id }
+
+                if (taskIds.isEmpty()) {
+                    _myTasks.value = emptyList()
+                    return@launch
+                }
+
+                // 2️⃣ Fetch tasks matching taskIds
+                val tasks = SupabaseClient.client.postgrest["tasks"]
+                    .select(
+                        columns = Columns.list(
+                            "id","title","description","deadline",
+                            "status","created_at","project_id"
+                        )
+                    ) {
+                        filter {
+                            taskIds.forEach { id ->
+                                or { eq("id", id) }
+                            }
+                        }  // <-- No import needed
+                    }
+                    .decodeList<Tasks>()
+
+                _myTasks.value = tasks  // 🔥 Push to StateFlow
+
+                println("Loaded tasks: $tasks")
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+
+
 
     fun fetchAllProjects(){
         viewModelScope.launch {

@@ -3,33 +3,54 @@ package com.example.dyadespace.manager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
+import com.example.dyadespace.viewitems.TaskItem
+import androidx.compose.foundation.lazy.items
+
 
 @Composable
-fun ManagerTasks(){
+fun ManagerTasks(viewModel: AuthViewModel){
+    LaunchedEffect(Unit) {
+        viewModel.fetchRole {}
+        viewModel.fetchMyTasks()
+    }
+
+    val tasks = viewModel.myTasks.collectAsState().value
+
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center
     ){
-       Text("Manager Tasks", style = MaterialTheme.typography.headlineMedium)
 
+                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+              items(tasks) { tsk ->
+                  TaskItem(tsk)
+              }
+        }
 
     }
 }
 
 
-//preview
+
 @Preview(showBackground = true)
 @Composable
 fun ManagerTasksPreview() {
     DyadeSpaceTheme {
-        ManagerTasks()
+        ManagerTasks(viewModel())
+
     }
 }
