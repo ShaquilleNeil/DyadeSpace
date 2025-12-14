@@ -2,6 +2,7 @@ package com.example.dyadespace.viewitems
 
 import android.view.RoundedCorner
 import android.view.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardDefaults.cardColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,7 +32,9 @@ fun TaskItem(tsk: Tasks) {
             .height(140.dp)
             .padding(horizontal = 2.dp, vertical = 2.dp),
         elevation = CardDefaults.cardElevation(6.dp),
-        shape = RoundedCornerShape(15.dp)
+        shape = RoundedCornerShape(15.dp),
+        colors = cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color.Black)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
 

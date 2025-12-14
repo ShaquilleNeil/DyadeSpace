@@ -31,6 +31,8 @@ import android.app.Activity
 import android.net.Uri
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -181,7 +183,12 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
                 isEditing = !isEditing // <-- toggle after save logic
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp),
         ) {
             Text(if (isEditing) "Save" else "Edit")
         }
@@ -196,6 +203,11 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                     launchSingleTop = true
                 }
             },
+            shape = RoundedCornerShape(20),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp),
             modifier = Modifier.fillMaxWidth(),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error

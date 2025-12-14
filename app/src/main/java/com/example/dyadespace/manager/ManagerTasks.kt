@@ -19,7 +19,15 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.TaskItem
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 
 
 @Composable
@@ -31,13 +39,40 @@ fun ManagerTasks(viewModel: AuthViewModel){
 
     val tasks = viewModel.myTasks.collectAsState().value
 
+    // UI-only state (filter)
+    val tabs = listOf( "To-Do", "In Progress", "Done")
+    var selectedTab by remember { mutableStateOf(0) }
+
+    val filteredTasks = remember(selectedTab, tasks) {
+        when (tabs[selectedTab]) {
+            "To-Do" -> tasks.filter { it.status == "todo" }
+            "In Progress" -> tasks.filter { it.status == "in-progress" }
+            "Done" -> tasks.filter { it.status == "done" }
+            else -> tasks
+        }
+    }
+
+
     Column(
         modifier = Modifier.fillMaxSize().padding(14.dp),
     ){
 
-                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp).padding(bottom = 14.dp).align(Alignment.CenterHorizontally))
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-              items(tasks) { tsk ->
+                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp).padding(bottom = 14.dp).align(Alignment.CenterHorizontally))
+
+        // 🔹 Status picker
+        TabRow(selectedTabIndex = selectedTab) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) },
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+        }
+
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+              items(filteredTasks) { tsk ->
                   TaskItem(tsk)
               }
         }
