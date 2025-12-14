@@ -52,6 +52,10 @@ class AuthViewModel : ViewModel() {
     private val _projects = MutableStateFlow<List<Projects>>(emptyList())
     val projects: StateFlow<List<Projects>> = _projects.asStateFlow()
 
+    val _aproject = MutableStateFlow<Projects?>(null)
+    val aproject: StateFlow<Projects?> = _aproject.asStateFlow()
+
+
 
     private val _isLoggedIn = mutableStateOf(false)
     val isLoggedIn: State<Boolean> = _isLoggedIn
@@ -303,6 +307,25 @@ class AuthViewModel : ViewModel() {
                 val projects = SupabaseClient.client.postgrest["projects"].select().decodeList<Projects>()
                 _projects.value = projects
 
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //fetch project by id
+    fun fetchProjectById(projectId: String){
+        viewModelScope.launch {
+            try {
+                val project = SupabaseClient.client.postgrest["projects"]
+                    .select{
+                        filter {
+                            eq("id", projectId)
+
+                        }
+                    }
+                    .decodeSingle<Projects>()
+                _aproject.value = project
             } catch (e: Exception) {
                 e.printStackTrace()
             }

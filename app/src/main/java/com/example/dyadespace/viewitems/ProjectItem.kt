@@ -126,7 +126,9 @@ fun ProjectItem(p: Projects, navController: NavController) {
 
                 Button(
                     onClick = {
-                        navController.navigate("projectView")
+                        p.id?.let { id ->
+                            navController.navigate("projectView/$id")
+                        }
 
                     },
                     shape = RoundedCornerShape(50),
