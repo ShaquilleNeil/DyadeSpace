@@ -23,13 +23,15 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.classes.Employee
 import coil.compose.AsyncImage
 import androidx.compose.foundation.lazy.items
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.viewitems.ProjectItem
 import com.example.dyadespace.viewitems.TaskItem
 
 
 @Composable
-fun ManagerHome(viewModel: AuthViewModel){
+fun ManagerHome(viewModel: AuthViewModel, navController: NavController){
 
     //runs once the screen loads to fire the fetch role again
     LaunchedEffect(Unit) {
@@ -49,14 +51,14 @@ fun ManagerHome(viewModel: AuthViewModel){
 
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp)
+        modifier = Modifier.fillMaxSize().padding(10.dp)
 
     ){
 
-        Text("Projects", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+        Text("PROJECTS", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp).align(Alignment.CenterHorizontally))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(projects) { prj ->
-                ProjectItem(prj)
+                ProjectItem(prj, navController)
             }
         }
 
@@ -99,7 +101,7 @@ fun ManagerHome(viewModel: AuthViewModel){
 //                style = MaterialTheme.typography.bodyMedium,
 //                modifier = Modifier.padding(top = 6.dp)
 //            )
-//
+//x
 //            Text(
 //                text = emp.role ?: "",
 //                style = MaterialTheme.typography.labelMedium,
@@ -129,5 +131,5 @@ fun ManagerHomePreview() {
         )
     }
 
-    ManagerHome(viewModel = fakeVM)
+    ManagerHome(viewModel = fakeVM, navController = rememberNavController())
 }

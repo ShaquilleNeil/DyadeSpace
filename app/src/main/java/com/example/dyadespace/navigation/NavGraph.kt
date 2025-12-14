@@ -10,6 +10,7 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.authScreens.LoginScreen
 import com.example.dyadespace.authScreens.SignupScreen
 import com.example.dyadespace.manager.ManagerMainScreen
+import com.example.dyadespace.manager.ProjectView
 
 @Composable
 fun AppNavGraph() {
@@ -36,9 +37,15 @@ fun AppNavGraph() {
             )
         }
 
+
         composable("manager") {
             ManagerMainScreen(mainNavController = navController)
         }
+
+        composable("projectView"){
+            ProjectView(navController = navController, viewModel = authViewModel)
+        }
+
 
         composable("TestConnectionScreen") {
             TestConnectionScreen()

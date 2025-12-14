@@ -56,14 +56,21 @@ class AuthViewModel : ViewModel() {
     private val _isLoggedIn = mutableStateOf(false)
     val isLoggedIn: State<Boolean> = _isLoggedIn
 
-    init {
-        checkSession() // runs on app launch
-    }
+//    init {
+//        checkSession() // runs on app launch
+//    }
+//
+//    fun checkSession() {
+//        viewModelScope.launch {
+//            try {
+//                val session = SupabaseClient.client.auth.currentSessionOrNull()
+//                _isLoggedIn.value = session != null
+//            } catch (e: Exception) {
+//                _isLoggedIn.value = false
+//            }
+//        }
+//    }
 
-    fun checkSession() {
-        val session = SupabaseClient.client.auth.currentSessionOrNull()
-        _isLoggedIn.value = session != null
-    }
 
 
 
@@ -131,7 +138,7 @@ class AuthViewModel : ViewModel() {
                 _authMessage.value = "Sign in successful"
 
 
-                checkSession()
+//                checkSession()
             } catch (e: Exception){
                 _authMessage.value = e.message
             }

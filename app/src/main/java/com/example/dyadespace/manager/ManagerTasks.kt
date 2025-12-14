@@ -19,6 +19,7 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.TaskItem
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
 
 
 @Composable
@@ -31,10 +32,10 @@ fun ManagerTasks(viewModel: AuthViewModel){
     val tasks = viewModel.myTasks.collectAsState().value
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(14.dp),
     ){
 
-                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp).padding(bottom = 14.dp).align(Alignment.CenterHorizontally))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
               items(tasks) { tsk ->
                   TaskItem(tsk)
