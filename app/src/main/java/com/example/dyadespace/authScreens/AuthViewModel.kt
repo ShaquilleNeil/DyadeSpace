@@ -25,6 +25,7 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import kotlinx.serialization.Serializable
 
 
 
@@ -54,6 +55,9 @@ class AuthViewModel : ViewModel() {
 
     val _aproject = MutableStateFlow<Projects?>(null)
     val aproject: StateFlow<Projects?> = _aproject.asStateFlow()
+
+    val _projectemployees = MutableStateFlow<List<Employee>>(emptyList())
+    val projectemployees: StateFlow<List<Employee>> = _projectemployees
 
 
 
@@ -313,6 +317,48 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    //fetch employees for project
+    fun fetchProjectEmployees(projectId: String) {
+        viewModelScope.launch {
+            try {
+                val employees = SupabaseClient.client
+                    .postgrest["projects_employees"]
+                    .select(
+                        columns = Columns.raw(
+                            """
+                        employees (
+                            "EID",
+                            "Employee_fn",
+                            "Employee_ln",
+                            "Employee_email",
+                            "Employee_phone",
+                            "role",
+                            "Avatar_url"
+                        )
+                        """
+                        )
+                    ) {
+                        filter {
+                            eq("id", projectId)
+                        }
+                    }
+                    .decodeList<ProjectEmployeeWithEmployee>()
+                    .map { it.employees }
+
+                _projectemployees.value = employees
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    @Serializable
+    data class ProjectEmployeeWithEmployee(
+        val employees: Employee
+    )
+
+
     //fetch project by id
     fun fetchProjectById(projectId: String){
         viewModelScope.launch {
@@ -331,6 +377,8 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+
+
 
     //we need something to wait for the response because it is not immediate : onResult (a callback function)
     fun fetchRole(onResult:(Employee?) -> Unit){
