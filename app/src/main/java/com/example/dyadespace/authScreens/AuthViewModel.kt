@@ -59,6 +59,10 @@ class AuthViewModel : ViewModel() {
     val _projectemployees = MutableStateFlow<List<Employee>>(emptyList())
     val projectemployees: StateFlow<List<Employee>> = _projectemployees
 
+    val _projectasks = MutableStateFlow<List<Tasks>>(emptyList())
+    val projectasks: StateFlow<List<Tasks>> = _projectasks
+
+
 
 
     private val _isLoggedIn = mutableStateOf(false)
@@ -353,9 +357,50 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    fun fetchProjectTasks(projectId: String) {
+        viewModelScope.launch {
+            try {
+                val tasks = SupabaseClient.client
+                    .postgrest["project_tasks"]
+                    .select(
+                        columns = Columns.raw(
+                            """
+                        tasks!project_tasks_Id_fkey (
+                            id,
+                            title,
+                            description,
+                            deadline,
+                            status,
+                            created_at,
+                            project_id
+                        )
+                        """
+                        )
+                    ) {
+                        filter {
+                            eq("id", projectId) // id = project_id
+                        }
+                    }
+                    .decodeList<ProjectTaskWithTask>()
+                    .map { it.tasks }
+
+                _projectasks.value = tasks
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
     @Serializable
     data class ProjectEmployeeWithEmployee(
         val employees: Employee
+    )
+
+    @Serializable
+    data class ProjectTaskWithTask(
+        val tasks: Tasks
     )
 
 

@@ -34,6 +34,7 @@ import com.example.dyadespace.viewitems.EmployeeItem
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -41,14 +42,20 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dyadespace.classes.Tasks
+import com.example.dyadespace.viewitems.TaskItem
 
 /* ---------------------------------------------------
    UI-ONLY COMPOSABLE (PREVIEWABLE)
 --------------------------------------------------- */
 @Composable
-fun ProjectViewUi(project: Projects, employees: List<Employee> ) {
+fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks> ) {
 
     var employeesExpanded by remember { mutableStateOf(false) }
+    var tasksExpanded by remember { mutableStateOf(false) }
+
+
 
     Column(
         modifier = Modifier
@@ -135,11 +142,43 @@ fun ProjectViewUi(project: Projects, employees: List<Employee> ) {
 //        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
         /* ---------- TASKS HEADER ---------- */
-        Text(
-            text = "Tasks",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 40.dp)
-        )
+        Row (
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { tasksExpanded = !tasksExpanded }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+
+        ){
+            Text("Tasks (${tasks.size})",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+
+
+
+            Icon(
+                imageVector = if (tasksExpanded)
+                    Icons.Default.ExpandLess
+                else
+                    Icons.Default.ExpandMore,
+                contentDescription = null
+            )
+
+        }
+
+        AnimatedVisibility(visible = tasksExpanded) {
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth()
+            ) {
+                items(tasks) { tsk ->
+                    TaskItem(tsk,
+                        modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
     }
 }
 
@@ -149,22 +188,27 @@ fun ProjectViewUi(project: Projects, employees: List<Employee> ) {
 @Composable
 fun ProjectViewContent(
     projectId: String,
+
     navController: NavController,
     viewModel: AuthViewModel
 ) {
     LaunchedEffect(projectId) {
         viewModel.fetchProjectById(projectId)
         viewModel.fetchProjectEmployees(projectId)
+        viewModel.fetchProjectTasks(projectId)
+
     }
 
     val project by viewModel.aproject.collectAsState()
     val employees by viewModel.projectemployees.collectAsState()
+    val tasks by viewModel.projectasks.collectAsState()
+
 
 
     if (project == null) {
         Text("Loading project…")
     } else {
-        ProjectViewUi(project = project!!, employees = employees)
+        ProjectViewUi(project = project!!, employees = employees, tasks = tasks)
     }
 }
 
@@ -200,16 +244,24 @@ fun ProjectViewPreview() {
                 Employee_email = "alex@example.com",
                 role = "Electrician",
                 Avatar_url = "https://picsum.photos/200?2"
+            )
+        ),
+        tasks = listOf(
+            Tasks(
+                id = "T1",
+                title = "Install drywall",
+                description = "Finish drywall installation on floor 2",
+                status = "in_progress",
+                deadline = "2023-11-15"
             ),
-            Employee(
-                EID = "E3",
-                Employee_fn = "Jamie",
-                Employee_ln = "Lopez",
-                Employee_phone = "555-2222",
-                Employee_email = "jamie@example.com",
-                role = "Foreman",
-                Avatar_url = "https://picsum.photos/200?3"
+            Tasks(
+                id = "T2",
+                title = "Electrical rough-in",
+                description = "Run wiring for lighting",
+                status = "pending",
+                deadline = "2023-11-20"
             )
         )
     )
 }
+
