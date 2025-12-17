@@ -49,12 +49,9 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Black,
                 unfocusedIndicatorColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black,
-                cursorColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
             )
+
+
         )
 
 
@@ -65,15 +62,15 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Black,
-                unfocusedIndicatorColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black,
-                cursorColor = Color.Black,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-            )
+//            colors = TextFieldDefaults.colors(
+//                focusedIndicatorColor = Color.Black,
+//                unfocusedIndicatorColor = Color.Black,
+//                focusedLabelColor = Color.Black,
+//                unfocusedLabelColor = Color.Black,
+//                cursorColor = Color.Black,
+//                focusedTextColor = Color.Black,
+//                unfocusedTextColor = Color.Black
+//            )
 
         )
 

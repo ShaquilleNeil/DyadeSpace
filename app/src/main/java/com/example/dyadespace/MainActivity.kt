@@ -12,7 +12,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DyadeSpaceTheme {
+            DyadeSpaceTheme(
+                darkTheme = false
+            ) {
                 // Single entry point into your app's navigation
                 AppNavGraph()
             }

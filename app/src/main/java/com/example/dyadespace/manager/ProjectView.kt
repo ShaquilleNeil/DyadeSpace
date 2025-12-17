@@ -1,18 +1,37 @@
 package com.example.dyadespace.manager
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,8 +39,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,21 +51,11 @@ import coil.compose.AsyncImage
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.classes.Projects
-import com.example.dyadespace.viewitems.EmployeeItem
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dyadespace.classes.Tasks
+import com.example.dyadespace.viewitems.EmployeeItem
 import com.example.dyadespace.viewitems.TaskItem
+import io.github.jan.supabase.realtime.Column
+
 
 /* ---------------------------------------------------
    UI-ONLY COMPOSABLE (PREVIEWABLE)
@@ -54,7 +65,19 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
 
     var employeesExpanded by remember { mutableStateOf(false) }
     var tasksExpanded by remember { mutableStateOf(false) }
+    val tabs = listOf( "To-Do", "In Progress", "Done")
+    var selectedTab by remember { mutableStateOf(0) }
+    var expanded by remember { mutableStateOf(false) }
 
+
+    val filteredTasks = remember(selectedTab, tasks) {
+        when (tabs[selectedTab]) {
+            "To-Do" -> tasks.filter { it.status == "todo" }
+            "In Progress" -> tasks.filter { it.status == "in-progress" }
+            "Done" -> tasks.filter { it.status == "done" }
+            else -> tasks
+        }
+    }
 
 
     Column(
@@ -80,7 +103,8 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
 
         Text(
             text = project.name ?: "Unnamed Project",
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier
+                .padding(bottom = 12.dp)
                 .align(Alignment.Start),
             style = MaterialTheme.typography.titleLarge
         )
@@ -89,7 +113,9 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
         Text(
 
             text = project.address ?: "",
-            modifier = Modifier.padding(top = 8.dp).align(Alignment.Start),
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .align(Alignment.Start),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
             fontWeight =  androidx.compose.ui.text.font.FontWeight.Bold
@@ -168,17 +194,123 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
         }
 
         AnimatedVisibility(visible = tasksExpanded) {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth()
-            ) {
-                items(tasks) { tsk ->
-                    TaskItem(tsk,
-                        modifier = Modifier.fillMaxWidth())
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+            ){
+
+                // 🔹 Status picker
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) },
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                ) {
+                    items(filteredTasks) { tsk ->
+                        TaskItem(tsk,
+                            modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
+
+
         }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.End
+            ){
+
+                AnimatedVisibility(expanded) {
+
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
+                        horizontalAlignment = Alignment.End
+
+                    )
+                    {
+                        FloatingActionButton(
+                            onClick = {
+                                expanded = !expanded
+                            },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .padding(1.dp)
+
+                        ){
+                            Icon(
+                                imageVector = Icons.Default.PersonAdd,
+                                contentDescription = "Add task"
+                            )
+
+                        }
+
+                        FloatingActionButton(
+                            onClick = { expanded = !expanded },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .padding(1.dp)
+
+                        ){
+                            Icon(
+                                imageVector = Icons.Default.PlaylistAdd,
+                                contentDescription = "Add task"
+                            )
+
+                        }
+                    }
+                }
+
+
+                // 🔹 Main FAB
+                FloatingActionButton(
+                    onClick = { expanded = !expanded }
+                ) {
+                    Icon(
+                        imageVector = if (expanded)
+                            Icons.Default.Close
+                        else
+                            Icons.Default.Add,
+                        contentDescription = "Actions"
+                    )
+                }
+
+            }
+
+
+
+
+
+
+        }
+
+
     }
 }
 
