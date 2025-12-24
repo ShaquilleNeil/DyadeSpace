@@ -140,21 +140,20 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun logIn(email: String, password: String){
-        viewModelScope.launch{
-            try{
-                SupabaseClient.client.auth.signInWith(Email){
+    fun logIn(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                SupabaseClient.client.auth.signInWith(Email) {
                     this.email = email
                     this.password = password
                 }
-                _authMessage.value = "Sign in successful"
 
+                // 🔑 THIS is the missing piece
+                _isLoggedIn.value = true
 
-//                checkSession()
-            } catch (e: Exception){
-                _authMessage.value = e.message
+            } catch (e: Exception) {
+                _authMessage.value = "Authentication failed"
             }
-
         }
     }
 
@@ -357,6 +356,26 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    // add employees to project
+    fun addEmployeeToProject(projectId: String?, employeeId: String){
+        viewModelScope.launch {
+            try {
+                SupabaseClient.client.postgrest["projects_employees"].insert(
+                    mapOf(
+                        "id" to projectId,
+                        "EID" to employeeId
+                    )
+                )
+
+                fetchProjectEmployees(projectId!!)
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun fetchProjectTasks(projectId: String) {
         viewModelScope.launch {
             try {
@@ -426,50 +445,20 @@ class AuthViewModel : ViewModel() {
 
 
     //we need something to wait for the response because it is not immediate : onResult (a callback function)
-    fun fetchRole(onResult:(Employee?) -> Unit){
-        viewModelScope.launch {
+    fun fetchRole(onResult: (UserRole?) -> Unit) {
+        viewModelScope.launch{
             try {
-                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
-                    ?: return@launch onResult(null)
+                val role = SupabaseClient.client
+                    .postgrest
+                    .rpc("get_my_role")
+                    .decodeSingle<String>()
 
-
-                val employee = SupabaseClient.client.postgrest["employees"]
-                    .select(
-                        columns = Columns.list(
-                            "EID",
-                            "Employee_fn",
-                            "Employee_ln",
-                            "Employee_phone",
-                            "Employee_email",
-                            "role",
-                            "Avatar_url",
-                            "created_at"
-                        )
-                    ){
-                        filter{
-                            eq("EID", userId)
-                        }
-
-                    }
-                    .decodeSingle<Employee>()
-
-
-
-
-                println("🟢 Employee row = $employee")
-                println("🟢 Employee role = ${employee?.role}")
-                _currentEmployee.value = employee //stored information to send
-                println("🟢 _currentEmployee = ${_currentEmployee.value}")
-
-                onResult(employee)
-
-            } catch(e: Exception) {
-                e.printStackTrace()
+                onResult(UserRole(role = role))
+            }catch (e: Exception){
                 onResult(null)
             }
         }
     }
-
 
     fun setFakeEmployee(emp: Employee) {
         _currentEmployee.value = emp

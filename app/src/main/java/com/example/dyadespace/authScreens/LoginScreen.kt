@@ -99,28 +99,25 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
 
         // 🔥 Wait for auth result and navigate when success happens
-        LaunchedEffect(message) {
-            if (message == "Sign in successful") {
+        val isLoggedIn by viewModel.isLoggedIn
 
-                // Reset message so it doesn't trigger again later
-                viewModel.setMessage(null)
-
-                viewModel.fetchRole { employee ->
-                    if (employee?.role == "manager") {
-                        navController.navigate("manager") {
+        LaunchedEffect(isLoggedIn) {
+            if (isLoggedIn) {
+                viewModel.fetchRole { role ->
+                    when (role?.role) {
+                        "manager" -> navController.navigate("manager") {
                             popUpTo("login") { inclusive = true }
-                            launchSingleTop = true
                         }
-                    } else {
-                        navController.navigate("TestConnectionScreen") {
+                        "employee" -> navController.navigate("TestConnectionScreen") {
                             popUpTo("login") { inclusive = true }
-                            launchSingleTop = true
+                        }
+                        else -> {
+                            viewModel.setMessage("Account not configured")
                         }
                     }
                 }
             }
         }
-
 
 
 

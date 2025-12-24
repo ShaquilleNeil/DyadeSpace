@@ -26,13 +26,20 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,14 +67,28 @@ import io.github.jan.supabase.realtime.Column
 /* ---------------------------------------------------
    UI-ONLY COMPOSABLE (PREVIEWABLE)
 --------------------------------------------------- */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks> ) {
+fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee> , viewModel: AuthViewModel) {
 
     var employeesExpanded by remember { mutableStateOf(false) }
     var tasksExpanded by remember { mutableStateOf(false) }
     val tabs = listOf( "To-Do", "In Progress", "Done")
     var selectedTab by remember { mutableStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    var selectedEmployee by remember { mutableStateOf<Employee?>(null) }
+
+
+    //state tha controls the sheet
+     val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false
+    )
+
+    var showSheet by remember { mutableStateOf(false) }
+
+
+
 
 
     val filteredTasks = remember(selectedTab, tasks) {
@@ -253,7 +274,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                     {
                         FloatingActionButton(
                             onClick = {
-                                expanded = !expanded
+                                showSheet = true
                             },
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -304,6 +325,73 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
             }
 
 
+            if(showSheet){
+                ModalBottomSheet(
+                    onDismissRequest = { showSheet = false },
+                    sheetState = sheetState
+                ){
+                    //content of the sheet
+                    //add employee
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    ){
+                        Text("Add Employee to Project",
+                        style = MaterialTheme.typography.titleMedium)
+
+                        ExposedDropdownMenuBox(
+                            expanded = dropdownExpanded,
+                            onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+                            modifier = Modifier.fillMaxWidth()
+
+                        ) {
+                            TextField(
+                                value = selectedEmployee?.let{
+                                    "${it.Employee_fn} ${it.Employee_ln}"
+                                } ?: "Select Employee",
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                                },
+                                modifier = Modifier.menuAnchor().fillMaxWidth()
+
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false }
+                            ) {
+//                                Text("DEBUG: ${allEmployees.size} employees")
+                                allEmployees.forEach { emp ->
+                                    DropdownMenuItem(
+                                        text = { Text("${emp.Employee_fn} ${emp.Employee_ln}") },
+                                        onClick = {
+                                            selectedEmployee = emp
+                                            dropdownExpanded = false
+                                        }
+                                    )
+
+                                }
+                            }
+                        }
+
+                       ///button to add employee
+                        Button(
+                            onClick = {
+                                if (selectedEmployee != null) {
+                                    viewModel.addEmployeeToProject(project.id, selectedEmployee!!.EID)
+                                }
+                            }
+
+                        ){
+                            Text("Add")
+                        }
+
+
+                    }
+
+                }
+            }
 
 
 
@@ -325,22 +413,26 @@ fun ProjectViewContent(
     viewModel: AuthViewModel
 ) {
     LaunchedEffect(projectId) {
+        println("🟡 ProjectViewContent projectId = $projectId")
         viewModel.fetchProjectById(projectId)
         viewModel.fetchProjectEmployees(projectId)
         viewModel.fetchProjectTasks(projectId)
+        viewModel.fetchAllEmployees()
 
     }
 
     val project by viewModel.aproject.collectAsState()
     val employees by viewModel.projectemployees.collectAsState()
     val tasks by viewModel.projectasks.collectAsState()
+    val allEmployees by viewModel.employees.collectAsState()
+
 
 
 
     if (project == null) {
         Text("Loading project…")
     } else {
-        ProjectViewUi(project = project!!, employees = employees, tasks = tasks)
+        ProjectViewUi(project = project!!, employees = employees, tasks = tasks, allEmployees = allEmployees, viewModel = viewModel)
     }
 }
 
@@ -393,7 +485,10 @@ fun ProjectViewPreview() {
                 status = "pending",
                 deadline = "2023-11-20"
             )
-        )
+        ),
+        allEmployees = listOf(),
+        viewModel = AuthViewModel()
+
     )
 }
 
