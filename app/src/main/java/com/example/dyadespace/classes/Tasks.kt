@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Tasks(
-    val id: String,
+    val id: String? = null,   //makes it nullanle
     val title: String,
     val description: String? = null,
     val status: String? = null,

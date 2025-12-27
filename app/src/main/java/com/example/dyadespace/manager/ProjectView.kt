@@ -60,6 +60,7 @@ import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.classes.Projects
 import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.viewitems.EmployeeItem
+import com.example.dyadespace.viewitems.TaskForm
 import com.example.dyadespace.viewitems.TaskItem
 import io.github.jan.supabase.realtime.Column
 
@@ -86,6 +87,8 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
     )
 
     var showSheet by remember { mutableStateOf(false) }
+    var showtaskform by remember { mutableStateOf(false) }
+
 
 
 
@@ -285,13 +288,13 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                         ){
                             Icon(
                                 imageVector = Icons.Default.PersonAdd,
-                                contentDescription = "Add task"
+                                contentDescription = "Add employee"
                             )
 
                         }
 
                         FloatingActionButton(
-                            onClick = { expanded = !expanded },
+                            onClick = { showtaskform = true },
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                             shape = CircleShape,
@@ -390,6 +393,23 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
 
                     }
 
+                }
+            }
+
+            if(showtaskform){
+                ModalBottomSheet(
+                    onDismissRequest = {showtaskform = false},
+                    sheetState = rememberModalBottomSheetState()
+                ){
+                    TaskForm(
+                        projectId = project.id!!,
+                        allEmployees = allEmployees,
+                        onDismiss = { showtaskform = false },
+                        onSave = { task ->
+                            viewModel.addTask( task)
+                            showtaskform = false
+                        }
+                    )
                 }
             }
 

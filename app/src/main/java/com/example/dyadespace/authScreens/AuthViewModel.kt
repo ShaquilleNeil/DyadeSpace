@@ -305,6 +305,36 @@ class AuthViewModel : ViewModel() {
     }
 
 
+    //add tasks
+    fun addTask(task: Tasks) {
+        viewModelScope.launch{
+
+            try {
+                val insertedTask = SupabaseClient.client.postgrest["tasks"].insert(task){
+                    select()
+                }.decodeSingle<Tasks>()
+
+                SupabaseClient.client.postgrest["project_tasks"]
+                    .insert(
+                        ProjectTaskInsert(
+                            project_id = insertedTask.project_id!!,
+                            task_id = insertedTask.id!!
+                        )
+                    )
+                fetchProjectTasks(insertedTask.project_id)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    @Serializable
+    data class ProjectTaskInsert(
+        val project_id: String,
+        val task_id: String
+    )
+
 
 
 
@@ -397,7 +427,7 @@ class AuthViewModel : ViewModel() {
                         )
                     ) {
                         filter {
-                            eq("id", projectId) // id = project_id
+                            eq("project_id", projectId) // id = project_id
                         }
                     }
                     .decodeList<ProjectTaskWithTask>()
@@ -410,6 +440,8 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+
+
 
 
     @Serializable
