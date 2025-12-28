@@ -1,5 +1,6 @@
 package com.example.dyadespace.authScreens
 
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
@@ -12,8 +13,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextField
-
-
+import androidx.compose.ui.res.painterResource
+import com.example.dyadespace.R
 
 
 @Composable
@@ -27,10 +28,18 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().padding(15.dp),
+//        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.dyadespace),
+            contentDescription = "Logo",
+            modifier = Modifier.size(250.dp).padding(top = 1.dp)
+
+        )
+
         Text("Login",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.Black,
