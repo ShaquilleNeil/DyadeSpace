@@ -399,7 +399,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
             if(showtaskform){
                 ModalBottomSheet(
                     onDismissRequest = {showtaskform = false},
-                    sheetState = rememberModalBottomSheetState()
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                 ){
                     TaskForm(
                         projectId = project.id!!,

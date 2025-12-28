@@ -57,6 +57,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
     LaunchedEffect(Unit) {
         viewModel.fetchRole { }
+        viewModel.fetchCurrentEmployee()
     }
 
     val employee = viewModel.currentEmployee.collectAsState().value

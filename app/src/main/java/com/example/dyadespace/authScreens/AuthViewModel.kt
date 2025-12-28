@@ -225,6 +225,26 @@ class AuthViewModel : ViewModel() {
     }
 
 
+    fun fetchCurrentEmployee() {
+        viewModelScope.launch {
+            try {
+                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+                    ?: return@launch
+
+                val employee = SupabaseClient.client
+                    .postgrest["employees"]
+                    .select {
+                        filter { eq("EID", userId) }
+                    }
+                    .decodeSingle<Employee>()
+
+                _currentEmployee.value = employee
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
 
     fun fetchAllEmployees() {
@@ -321,6 +341,8 @@ class AuthViewModel : ViewModel() {
                             task_id = insertedTask.id!!
                         )
                     )
+
+//                TODO add to employee_tasks
                 fetchProjectTasks(insertedTask.project_id)
 
             } catch (e: Exception) {
