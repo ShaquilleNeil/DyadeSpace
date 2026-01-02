@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -43,7 +45,7 @@ fun TaskForm(
     projectId: String,
     allEmployees: List<Employee> ,
     onDismiss: () -> Unit,
-    onSave: (Tasks) -> Unit
+    onSave: (Tasks, String?) -> Unit
 ){
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -58,7 +60,8 @@ fun TaskForm(
 
     Column(
         modifier = Modifier.padding(16.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ){
 
@@ -147,7 +150,8 @@ fun TaskForm(
                     deadline = deadline,
                     project_id = projectId
                 )
-                onSave(newTask)
+
+                onSave(newTask, selectedEmployee?.EID)
 
             },
             modifier = Modifier.width(200.dp).padding(top = 16.dp).align(Alignment.CenterHorizontally),
@@ -214,6 +218,9 @@ fun AddTaskFormPreview() {
             Employee("E2", "Alex", "Martin", "", "", "Electrician", "")
         ),
         onDismiss = {},
-        onSave = {}
+        onSave = {
+                task, employeeId ->
+            println("Task: $task, Employee ID: $employeeId")
+        }
     )
 }

@@ -45,6 +45,9 @@ class AuthViewModel : ViewModel() {
     private val _myTasks = MutableStateFlow<List<Tasks>>(emptyList())
     val myTasks = _myTasks.asStateFlow()
 
+    private val _taskbyid = MutableStateFlow<Tasks?>(null)
+    val taskbyid: StateFlow<Tasks?> = _taskbyid
+
 
     private val _assignedTasks = MutableStateFlow<List<EmployeeTask>>(emptyList())
     val assignedTasks = _assignedTasks.asStateFlow()
@@ -324,15 +327,100 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    fun fetchTaskById(taskId: String) {
+        viewModelScope.launch {
+            try{
+                val tsk = SupabaseClient.client.postgrest["tasks"]
+                    .select{
+                        filter {
+                            eq("id", taskId)
+                        }
+                    }
+                    .decodeSingle<Tasks>()
+
+                _taskbyid.value = tsk
+
+
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+        }
+
+    }
+
+    //assign task to employee
+//    fun assignTask(taskId: String, employeeId: String){
+//        if (taskId.isNullOrBlank() || employeeId.isNullOrBlank()) {
+//            return // invalid assignment, do nothing
+//        }
+//
+//        viewModelScope.launch {
+//            try {
+//                SupabaseClient.client.postgrest["employee_tasks"].insert(
+//                    mapOf(
+//                        "id" to taskId,
+//                        "EID" to employeeId
+//                    ))
+//
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//    }
+
 
     //add tasks
-    fun addTask(task: Tasks) {
-        viewModelScope.launch{
+//    fun addTask(task: Tasks) {
+//        viewModelScope.launch{
+//
+//            try {
+//                val insertedTask = SupabaseClient.client.postgrest["tasks"].insert(task){
+//                    select()
+//                }.decodeSingle<Tasks>()
+//
+//                SupabaseClient.client.postgrest["project_tasks"]
+//                    .insert(
+//                        ProjectTaskInsert(
+//                            project_id = insertedTask.project_id!!,
+//                            task_id = insertedTask.id!!
+//                        )
+//                    )
+//
+////                TODO add to employee_tasks
+//                fetchProjectTasks(insertedTask.project_id)
+//
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//    }
 
+
+    fun addTaskAndAssign(task: Tasks, employeeId: String?) {
+        viewModelScope.launch {
             try {
-                val insertedTask = SupabaseClient.client.postgrest["tasks"].insert(task){
-                    select()
-                }.decodeSingle<Tasks>()
+                // 1️⃣ Insert task and get generated ID
+                val insertedTask = SupabaseClient.client
+                    .postgrest["tasks"]
+                    .insert(task) {
+                        select()
+                    }
+                    .decodeSingle<Tasks>()
+
+                val taskId = insertedTask.id ?: return@launch
+
+                // 2️⃣ Assign employee if selected
+                if (!employeeId.isNullOrBlank()) {
+                    SupabaseClient.client.postgrest["employee_tasks"]
+                        .insert(
+                            mapOf(
+                                "id" to taskId,
+                                "EID" to employeeId
+                            )
+                        )
+                }
 
                 SupabaseClient.client.postgrest["project_tasks"]
                     .insert(
@@ -342,8 +430,8 @@ class AuthViewModel : ViewModel() {
                         )
                     )
 
-//                TODO add to employee_tasks
-                fetchProjectTasks(insertedTask.project_id)
+                // 3️⃣ Refresh UI
+                fetchProjectTasks(insertedTask.project_id!!)
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -351,13 +439,21 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    @Serializable
-    data class ProjectTaskInsert(
-        val project_id: String,
-        val task_id: String
-    )
+    fun updateTaskStatus(taskId: String, newStatus: String) {
+        viewModelScope.launch{
+            try {
+                SupabaseClient.client.postgrest["tasks"].update(
+                    mapOf("status" to newStatus)
 
-
+                ){
+                    filter { eq("id", taskId) }
+                }
+                fetchTaskById(taskId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
 
     fun fetchAllProjects(){
@@ -465,18 +561,6 @@ class AuthViewModel : ViewModel() {
 
 
 
-
-    @Serializable
-    data class ProjectEmployeeWithEmployee(
-        val employees: Employee
-    )
-
-    @Serializable
-    data class ProjectTaskWithTask(
-        val tasks: Tasks
-    )
-
-
     //fetch project by id
     fun fetchProjectById(projectId: String){
         viewModelScope.launch {
@@ -495,6 +579,7 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+
 
 
 

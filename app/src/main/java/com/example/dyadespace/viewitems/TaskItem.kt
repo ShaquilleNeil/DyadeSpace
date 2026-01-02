@@ -20,12 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.dyadespace.classes.Tasks
 
 @Composable
-fun TaskItem(tsk: Tasks, modifier: Modifier = Modifier) {
+fun TaskItem(tsk: Tasks, modifier: Modifier = Modifier, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -62,7 +64,11 @@ fun TaskItem(tsk: Tasks, modifier: Modifier = Modifier) {
                 )
 
                 Button(
-                    onClick = { /* TODO: Navigate */ },
+                    onClick = {
+                        tsk.id?.let {id ->
+                            navController.navigate("taskView/$id")
+                        }
+                    },
                     shape = RoundedCornerShape(20),
                     modifier = Modifier.align(Alignment.Start).padding(top = 10.dp).height(35.dp)
 
@@ -105,6 +111,8 @@ fun TaskItemPreview() {
             deadline = "2025-01-13",
             created_at = null,
             project_id = null
-        )
+        ),
+        modifier = Modifier,
+        navController = NavController(LocalContext.current)
     )
 }

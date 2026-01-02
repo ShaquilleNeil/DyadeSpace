@@ -13,6 +13,7 @@ import com.example.dyadespace.authScreens.LoginScreen
 import com.example.dyadespace.authScreens.SignupScreen
 import com.example.dyadespace.manager.ManagerMainScreen
 import com.example.dyadespace.manager.ProjectViewContent
+import com.example.dyadespace.manager.TaskView
 
 @Composable
 fun AppNavGraph() {
@@ -51,6 +52,19 @@ fun AppNavGraph() {
             val projectId = backStackEntry.arguments?.getString("projectId")
             // Use the projectId as needed
             ProjectViewContent(projectId = projectId!!, navController = navController, viewModel = authViewModel)
+        }
+
+
+        //create route to pass task id to task viiew
+        composable("taskView/{taskId}",
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ){
+            backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId")
+            // Use the taskId as needed
+
+            TaskView(taskId = taskId!!, navController = navController, viewModel = authViewModel)
+
         }
 
 

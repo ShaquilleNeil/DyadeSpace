@@ -28,10 +28,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 
 
 @Composable
-fun ManagerTasks(viewModel: AuthViewModel){
+fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
     LaunchedEffect(Unit) {
         viewModel.fetchRole {}
         viewModel.fetchMyTasks()
@@ -73,7 +75,7 @@ fun ManagerTasks(viewModel: AuthViewModel){
 
         LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
               items(filteredTasks) { tsk ->
-                  TaskItem(tsk)
+                  TaskItem(tsk, navController = navController)
               }
         }
 
@@ -86,7 +88,7 @@ fun ManagerTasks(viewModel: AuthViewModel){
 @Composable
 fun ManagerTasksPreview() {
     DyadeSpaceTheme {
-        ManagerTasks(viewModel())
+        ManagerTasks(viewModel(), NavController(LocalContext.current))
 
     }
 }

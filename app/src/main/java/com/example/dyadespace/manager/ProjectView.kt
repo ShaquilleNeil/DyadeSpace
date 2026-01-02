@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -51,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -70,7 +73,7 @@ import io.github.jan.supabase.realtime.Column
 --------------------------------------------------- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee> , viewModel: AuthViewModel) {
+fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee> , viewModel: AuthViewModel, navcontroller: NavController) {
 
     var employeesExpanded by remember { mutableStateOf(false) }
     var tasksExpanded by remember { mutableStateOf(false) }
@@ -114,16 +117,20 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
 
 
 
-        AsyncImage(
-            model = project.photo_url,
-            contentDescription = "Project Image",
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+                .height(200.dp)
                 .clip(RoundedCornerShape(8.dp))
-
-        )
+        ) {
+            AsyncImage(
+                model = project.photo_url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize().offset(y = (-20).dp)
+            )
+        }
 
         Text(
             text = project.name ?: "Unnamed Project",
@@ -247,7 +254,8 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                 ) {
                     items(filteredTasks) { tsk ->
                         TaskItem(tsk,
-                            modifier = Modifier.fillMaxWidth())
+                            modifier = Modifier.fillMaxWidth(), navController = navcontroller
+                        )
                     }
                 }
             }
@@ -405,8 +413,8 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                         projectId = project.id!!,
                         allEmployees = allEmployees,
                         onDismiss = { showtaskform = false },
-                        onSave = { task ->
-                            viewModel.addTask( task)
+                        onSave = { task, employeeId ->
+                            viewModel.addTaskAndAssign(task, employeeId)
                             showtaskform = false
                         }
                     )
@@ -452,7 +460,7 @@ fun ProjectViewContent(
     if (project == null) {
         Text("Loading project…")
     } else {
-        ProjectViewUi(project = project!!, employees = employees, tasks = tasks, allEmployees = allEmployees, viewModel = viewModel)
+        ProjectViewUi(project = project!!, employees = employees, tasks = tasks, allEmployees = allEmployees, viewModel = viewModel, navcontroller = navController)
     }
 }
 
@@ -507,7 +515,8 @@ fun ProjectViewPreview() {
             )
         ),
         allEmployees = listOf(),
-        viewModel = AuthViewModel()
+        viewModel = AuthViewModel(),
+        navcontroller = NavController(LocalContext.current)
 
     )
 }
