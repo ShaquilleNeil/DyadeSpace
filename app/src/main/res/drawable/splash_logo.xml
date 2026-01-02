@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background -->
+    <item android:drawable="@color/white" />
+
+    <!-- Centered logo -->
+    <item
+        android:left="64dp"
+        android:top="64dp"
+        android:right="64dp"
+        android:bottom="64dp">
+
+        <bitmap
+            android:src="@drawable/dyadespace"
+            android:gravity="center"
+            android:tileMode="disabled" />
+    </item>
+
+</layer-list>
