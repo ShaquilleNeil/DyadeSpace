@@ -1,5 +1,6 @@
 package com.example.dyadespace.manager
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.TaskItem
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.runtime.mutableStateOf
@@ -71,23 +73,54 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
                 )
             }
         }
-
-        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-              items(filteredTasks) { tsk ->
-                  TaskItem(tsk, navController = navController)
-              }
+        if (filteredTasks.isEmpty()) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f), // 👈 takes LazyColumn’s space
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No tasks found",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // 👈 same space as empty state
+                    .padding(top = 10.dp)
+            ) {
+                items(filteredTasks) { tsk ->
+                    TaskItem(tsk, navController = navController)
+                }
+            }
         }
+
+
+
 
     }
 }
 
 
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Light", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    showBackground = true,
+    name = "Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
 fun ManagerTasksPreview() {
-    DyadeSpaceTheme {
-        ManagerTasks(viewModel(), NavController(LocalContext.current))
-
+    DyadeSpaceTheme() {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            ManagerTasks(viewModel(), NavController(LocalContext.current))
+        }
     }
+
 }

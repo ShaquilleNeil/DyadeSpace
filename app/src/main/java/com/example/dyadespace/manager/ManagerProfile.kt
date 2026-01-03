@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -54,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 
 
 @Composable
@@ -108,7 +111,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp).safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
 
 
 
@@ -151,68 +154,83 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                 modifier = Modifier.fillMaxWidth()
 
             ){
-                Text("Upload Image")
+                Text("Upload Image", color = MaterialTheme.colorScheme.onSurface)
             }
         }
 
+        Text(firstName + " " + lastName, style = MaterialTheme.typography.headlineSmall)
+        Text(email, style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray)
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+
+
+        if (isEditing) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                OutlinedTextField(
+                    value = firstName,
+                    onValueChange = {if (isEditing) firstName = it },
+                    readOnly = !isEditing,
+                    enabled = isEditing,
+                    label = { Text("First Name") },
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = lastName,
+                    onValueChange = { if (isEditing) lastName = it },
+                    readOnly = !isEditing,
+                    enabled = isEditing,
+                    label = { Text("Last Name") },
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),   // text color
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
             OutlinedTextField(
-                value = firstName,
-                onValueChange = {if (isEditing) firstName = it },
+                value = email,
+                onValueChange = { if (isEditing) email = it },
+                label = { Text("Email", color = MaterialTheme.colorScheme.onSurface) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "Person Icon",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
                 readOnly = !isEditing,
                 enabled = isEditing,
-                label = { Text("First Name") },
-                textStyle = LocalTextStyle.current.copy(color = Color.Black),
-                modifier = Modifier.weight(1f)
+                textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
+                modifier = Modifier.fillMaxWidth()
             )
-            OutlinedTextField(
-                value = lastName,
-                onValueChange = { if (isEditing) lastName = it },
-                readOnly = !isEditing,
-                enabled = isEditing,
-                label = { Text("Last Name") },
-                textStyle = LocalTextStyle.current.copy(color = Color.Black),   // text color
-               modifier = Modifier.weight(1f)
-            )
+
         }
 
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { if (isEditing) email = it },
-            label = { Text("Email") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Email,
-                    contentDescription = "Person Icon"
-                )
-            },
-            readOnly = !isEditing,
-            enabled = isEditing,
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            modifier = Modifier.fillMaxWidth()
-        )
+
+
         OutlinedTextField(
             value = phone,
             onValueChange = {if (isEditing) phone = it },
-            label = { Text("Phone") },
+            label = { Text("Phone", color = MaterialTheme.colorScheme.onSurface) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Phone,
-                    contentDescription = "Person Icon"
+                    contentDescription = "Person Icon",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             },
             readOnly = !isEditing,
             enabled = isEditing,
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
+            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
             modifier = Modifier.fillMaxWidth()
         )
+
+
 
 
         Button(
@@ -288,7 +306,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                 tint = Color.White
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Logout")
+            Text("Logout", color = Color.White)
         }
 
 
@@ -300,26 +318,41 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
 
 //preview
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Light", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    showBackground = true,
+    name = "Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
 fun ManagerProfilePreview() {
-    val fakeVM = AuthViewModel().apply {
-        setFakeEmployee(
-            Employee(
-                EID = "123",
-                Employee_fn = "Shaq",
-                Employee_ln = "Neil",
-                Employee_phone = "123-4567",
-                Employee_email = "shaq@mail.com",
-                role = "manager",
-                Avatar_url = "https://ui-avatars.com/api/?name=Shaq+Neil&background=0F172A&color=FFFFFF&size=256",
-                created_at = "Now"
+
+    DyadeSpaceTheme() {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            val fakeVM = AuthViewModel().apply {
+                setFakeEmployee(
+                    Employee(
+                        EID = "123",
+                        Employee_fn = "Shaq",
+                        Employee_ln = "Neil",
+                        Employee_phone = "123-4567",
+                        Employee_email = "shaq@mail.com",
+                        role = "manager",
+                        Avatar_url = "https://ui-avatars.com/api/?name=Shaq+Neil&background=0F172A&color=FFFFFF&size=256",
+                        created_at = "Now"
+                    )
+                )
+            }
+
+            ManagerProfile(
+                viewModel = fakeVM,
+                mainNavController = rememberNavController()
             )
-        )
+        }
     }
 
-    ManagerProfile(
-        viewModel = fakeVM,
-        mainNavController = rememberNavController()
-    )
+
 }

@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
                 androidx.lifecycle.viewmodel.compose.viewModel()
 
 
-            DyadeSpaceTheme(darkTheme = false) {
+            DyadeSpaceTheme() {
                 AppNavGraph(viewModel = viewModel)
             }
         }
