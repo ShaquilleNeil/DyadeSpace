@@ -55,7 +55,7 @@ fun ManagerHome(viewModel: AuthViewModel, navController: NavController){
 
     ){
 
-        Text("PROJECTS", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp).align(Alignment.CenterHorizontally))
+        Text("PROJECTS", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp).align(Alignment.CenterHorizontally))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(projects) { prj ->
                 ProjectItem(prj, navController)

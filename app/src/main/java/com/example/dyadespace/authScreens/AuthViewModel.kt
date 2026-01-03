@@ -26,6 +26,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
 import kotlinx.serialization.Serializable
+import io.github.jan.supabase.auth.status.SessionStatus
+
 
 
 
@@ -68,23 +70,27 @@ class AuthViewModel : ViewModel() {
 
 
 
-    private val _isLoggedIn = mutableStateOf(false)
-    val isLoggedIn: State<Boolean> = _isLoggedIn
+    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
+    val isLoggedIn: StateFlow<Boolean?> = _isLoggedIn.asStateFlow()
 
 //    init {
 //        checkSession() // runs on app launch
 //    }
 //
-//    fun checkSession() {
-//        viewModelScope.launch {
-//            try {
-//                val session = SupabaseClient.client.auth.currentSessionOrNull()
-//                _isLoggedIn.value = session != null
-//            } catch (e: Exception) {
-//                _isLoggedIn.value = false
-//            }
-//        }
-//    }
+init {
+    viewModelScope.launch {
+        SupabaseClient.client.auth.sessionStatus.collect { status ->
+            _isLoggedIn.value = when (status) {
+                is SessionStatus.Authenticated -> true
+                is SessionStatus.NotAuthenticated -> false
+                is SessionStatus.RefreshFailure -> false
+                is SessionStatus.Initializing -> null
+            }
+        }
+    }
+}
+
+
 
 
 
@@ -151,8 +157,6 @@ class AuthViewModel : ViewModel() {
                     this.password = password
                 }
 
-                // 🔑 THIS is the missing piece
-                _isLoggedIn.value = true
 
             } catch (e: Exception) {
                 _authMessage.value = "Authentication failed"
@@ -611,6 +615,8 @@ class AuthViewModel : ViewModel() {
                 SupabaseClient.client.auth.signOut()
                 _authMessage.value = "Sign out successful"
                 _currentEmployee.value = null
+                _isLoggedIn.value = false
+
             } catch (e: Exception) {
                 _authMessage.value = e.message
 

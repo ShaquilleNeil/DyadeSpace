@@ -78,8 +78,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("io.ktor:ktor-client-okhttp:3.3.3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.compose.material3:material3:1.0.0-alpha12")
-    implementation("androidx.compose.material3:material3-window-size-class:1.0.0-alpha12")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("io.coil-kt:coil-compose:2.4.0")
 

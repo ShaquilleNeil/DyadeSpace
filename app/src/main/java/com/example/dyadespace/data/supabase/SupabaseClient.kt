@@ -11,6 +11,7 @@ import io.github.jan.supabase.storage.Storage
 
 
 
+
 object SupabaseClient {
 
     private val SUPABASE_URL = BuildConfig.SUPABASE_URL

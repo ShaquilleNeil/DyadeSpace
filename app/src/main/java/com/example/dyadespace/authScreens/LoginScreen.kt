@@ -29,14 +29,14 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
     Column(
         modifier = Modifier.fillMaxSize().padding(15.dp),
-//        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Image(
             painter = painterResource(id = R.drawable.dyadespace),
             contentDescription = "Logo",
-            modifier = Modifier.size(250.dp).padding(top = 1.dp)
+            modifier = Modifier.size(190.dp)
 
         )
 
@@ -45,7 +45,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             color = Color.Black,
             modifier = Modifier.padding(bottom = 16.dp))
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(10.dp))
 
 
         OutlinedTextField(
@@ -106,27 +106,6 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             Text("Login")
         }
 
-
-        // 🔥 Wait for auth result and navigate when success happens
-        val isLoggedIn by viewModel.isLoggedIn
-
-        LaunchedEffect(isLoggedIn) {
-            if (isLoggedIn) {
-                viewModel.fetchRole { role ->
-                    when (role?.role) {
-                        "manager" -> navController.navigate("manager") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                        "employee" -> navController.navigate("TestConnectionScreen") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                        else -> {
-                            viewModel.setMessage("Account not configured")
-                        }
-                    }
-                }
-            }
-        }
 
 
 

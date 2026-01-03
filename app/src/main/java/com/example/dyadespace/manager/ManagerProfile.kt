@@ -29,16 +29,30 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.Activity
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 
 
@@ -92,21 +106,36 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp).safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+
 
 
     ) {
-        AsyncImage(
-            model = imageUri ?: "", // fallback image
-            contentDescription = "Profile Image",
-            modifier = Modifier
-                .size(120.dp)
-                .padding(8.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
+        if (imageUri == null) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Default Avatar",
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            AsyncImage(
+                model = imageUri,
+                contentDescription = "Profile Image",
+                modifier = Modifier
+                    .size(120.dp)
+                    .padding(8.dp)
+                    .clip(CircleShape)
+                ,
+                contentScale = ContentScale.Crop
+            )
+        }
 
 
         if (isEditing) {
@@ -127,28 +156,43 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
         }
 
 
-        OutlinedTextField(
-            value = firstName,
-            onValueChange = {if (isEditing) firstName = it },
-            readOnly = !isEditing,
-            enabled = isEditing,
-            label = { Text("First Name") },
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = lastName,
-            onValueChange = { if (isEditing) lastName = it },
-            readOnly = !isEditing,
-            enabled = isEditing,
-            label = { Text("Last Name") },
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),   // text color
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = {if (isEditing) firstName = it },
+                readOnly = !isEditing,
+                enabled = isEditing,
+                label = { Text("First Name") },
+                textStyle = LocalTextStyle.current.copy(color = Color.Black),
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { if (isEditing) lastName = it },
+                readOnly = !isEditing,
+                enabled = isEditing,
+                label = { Text("Last Name") },
+                textStyle = LocalTextStyle.current.copy(color = Color.Black),   // text color
+               modifier = Modifier.weight(1f)
+            )
+        }
+
+
         OutlinedTextField(
             value = email,
             onValueChange = { if (isEditing) email = it },
             label = { Text("Email") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "Person Icon"
+                )
+            },
             readOnly = !isEditing,
             enabled = isEditing,
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
@@ -158,6 +202,12 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
             value = phone,
             onValueChange = {if (isEditing) phone = it },
             label = { Text("Phone") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Phone,
+                    contentDescription = "Person Icon"
+                )
+            },
             readOnly = !isEditing,
             enabled = isEditing,
             textStyle = LocalTextStyle.current.copy(color = Color.Black),
@@ -191,7 +241,24 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                 pressedElevation = 15.dp,
                 disabledElevation = 0.dp),
         ) {
-            Text(if (isEditing) "Save" else "Edit")
+            if (isEditing) {
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = "Save Icon",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White)
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Icon",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(if (isEditing) "Save Changes" else "Edit Profile")
         }
 
         Button(
@@ -214,6 +281,13 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                 containerColor = MaterialTheme.colorScheme.error
             )
         ) {
+            Icon(
+                imageVector = Icons.Default.ExitToApp,
+                contentDescription = "Person Icon",
+                modifier = Modifier.size(20.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text("Logout")
         }
 
@@ -238,10 +312,14 @@ fun ManagerProfilePreview() {
                 Employee_phone = "123-4567",
                 Employee_email = "shaq@mail.com",
                 role = "manager",
-                Avatar_url = null,
+                Avatar_url = "https://ui-avatars.com/api/?name=Shaq+Neil&background=0F172A&color=FFFFFF&size=256",
                 created_at = "Now"
             )
         )
     }
-    ManagerProfile(viewModel = fakeVM,  mainNavController = NavController(LocalContext.current))
+
+    ManagerProfile(
+        viewModel = fakeVM,
+        mainNavController = rememberNavController()
+    )
 }

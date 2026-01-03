@@ -59,7 +59,6 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
         modifier = Modifier.fillMaxSize().padding(14.dp),
     ){
 
-                Text("My Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp).padding(bottom = 14.dp).align(Alignment.CenterHorizontally))
 
         // 🔹 Status picker
         TabRow(selectedTabIndex = selectedTab) {
