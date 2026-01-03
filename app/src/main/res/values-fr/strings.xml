@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DyadeSpace</string>
+    <string name="projects">Projets</string>
+    <string name="firstname">Prénom</string>
+    <string name="lastname">Nom de famille</string>
+    <string name="phone">Téléphone</string>
+    <string name="email">Courriel</string>
+    <string name="editprofile">Modifier le profil</string>
+    <string name="savechanges">Enregistrer les modifications</string>
+    <string name="logout">Déconnexion</string>
+</resources>

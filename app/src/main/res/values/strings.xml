@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">DyadeSpace</string>
+    <string name="projects">Projects</string>
+    <string name="firstname">First Name</string>
+    <string name="lastname">Last Name</string>
+    <string name="phone">Phone</string>
+    <string name="email">Email</string>
+    <string name="editprofile">Edit Profile</string>
+    <string name="savechanges">Save Changes</string>
+    <string name="logout">Logout></string>
 </resources>

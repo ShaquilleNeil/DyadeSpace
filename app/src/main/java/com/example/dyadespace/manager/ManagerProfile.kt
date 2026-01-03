@@ -53,9 +53,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.example.dyadespace.R
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 
 
@@ -176,7 +178,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                     onValueChange = {if (isEditing) firstName = it },
                     readOnly = !isEditing,
                     enabled = isEditing,
-                    label = { Text("First Name") },
+                    label = { Text(stringResource(R.string.firstname)) },
                     textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
                     modifier = Modifier.weight(1f)
                 )
@@ -185,7 +187,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                     onValueChange = { if (isEditing) lastName = it },
                     readOnly = !isEditing,
                     enabled = isEditing,
-                    label = { Text("Last Name") },
+                    label = { Text(stringResource(R.string.lastname)) },
                     textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),   // text color
                     modifier = Modifier.weight(1f)
                 )
@@ -194,7 +196,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
             OutlinedTextField(
                 value = email,
                 onValueChange = { if (isEditing) email = it },
-                label = { Text("Email", color = MaterialTheme.colorScheme.onSurface) },
+                label = { Text( stringResource(R.string.email), color = MaterialTheme.colorScheme.onSurface) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Email,
@@ -216,7 +218,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
         OutlinedTextField(
             value = phone,
             onValueChange = {if (isEditing) phone = it },
-            label = { Text("Phone", color = MaterialTheme.colorScheme.onSurface) },
+            label = { Text(stringResource(R.string.phone), color = MaterialTheme.colorScheme.onSurface) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Phone,
@@ -276,7 +278,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Text(if (isEditing) "Save Changes" else "Edit Profile")
+            Text(if (isEditing) stringResource(R.string.savechanges) else stringResource(R.string.editprofile), color = Color.White)
         }
 
         Button(
@@ -306,7 +308,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
                 tint = Color.White
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Logout", color = Color.White)
+            Text(stringResource(R.string.logout), color = Color.White)
         }
 
 

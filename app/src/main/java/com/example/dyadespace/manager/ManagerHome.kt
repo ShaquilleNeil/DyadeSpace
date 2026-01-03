@@ -1,6 +1,5 @@
 package com.example.dyadespace.manager
 
-import android.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,11 +22,16 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.classes.Employee
 import coil.compose.AsyncImage
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.viewitems.ProjectItem
 import com.example.dyadespace.viewitems.TaskItem
+import com.example.dyadespace.R
+
+
+
 
 
 @Composable
@@ -55,7 +59,7 @@ fun ManagerHome(viewModel: AuthViewModel, navController: NavController){
 
     ){
 
-        Text("PROJECTS", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp).align(Alignment.CenterHorizontally))
+        Text(stringResource(R.string.projects), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp).align(Alignment.CenterHorizontally))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(projects) { prj ->
                 ProjectItem(prj, navController)
