@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 
 
@@ -108,24 +109,28 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 1.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             tabs.forEachIndexed { index, title ->
                 FilterChip(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
+                    modifier = Modifier.weight(1f),
                     label = {
                         Text(
-                            title,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                            text = title,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    },
-                    modifier = Modifier.weight(1f)
+                    }
                 )
             }
         }
+
 
 
     }
