@@ -3,10 +3,12 @@ package com.example.dyadespace.manager
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +22,8 @@ import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.TaskItem
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -31,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 
 
@@ -61,18 +66,6 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
         modifier = Modifier.fillMaxSize().padding(14.dp),
     ){
 
-
-        // 🔹 Status picker
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title) },
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-            }
-        }
         if (filteredTasks.isEmpty()) {
             androidx.compose.foundation.layout.Box(
                 modifier = Modifier
@@ -85,7 +78,8 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-        } else {
+        }
+        else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,6 +93,39 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
         }
 
 
+        // 🔹 Status picker
+//        TabRow(selectedTabIndex = selectedTab) {
+//            tabs.forEachIndexed { index, title ->
+//                Tab(
+//                    selected = selectedTab == index,
+//                    onClick = { selectedTab = index },
+//                    text = { Text(title) },
+//                    modifier = Modifier.padding(horizontal = 8.dp)
+//                )
+//            }
+//        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 1.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            tabs.forEachIndexed { index, title ->
+                FilterChip(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    label = {
+                        Text(
+                            title,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
 
     }

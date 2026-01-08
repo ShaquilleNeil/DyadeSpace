@@ -2,6 +2,7 @@ package com.example.dyadespace.manager
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,8 +56,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -116,8 +121,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(16.dp),
+                ,
             horizontalAlignment = Alignment.Start
         )
         {
@@ -127,312 +131,351 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
+                    .height(260.dp) // banner height
+            )
+            {
+                // 1️⃣ Image
                 AsyncImage(
                     model = project.photo_url,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    alignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize().offset(y = (-20).dp)
-                )
-            }
-
-            Text(
-                text = project.name ?: "Unnamed Project",
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .align(Alignment.Start),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-
-            Text(
-
-                text = project.address ?: "",
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .align(Alignment.Start),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight =  androidx.compose.ui.text.font.FontWeight.Bold
-            )
-
-            Text(
-                text = project.description ?: "",
-                modifier = Modifier.padding(top = 16.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-            /* ---------- EMPLOYEES HEADER (CLICKABLE) ---------- */
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { employeesExpanded = !employeesExpanded }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Employees (${employees.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxSize()
                 )
 
-                Icon(
-                    imageVector = if (employeesExpanded)
-                        Icons.Default.ExpandLess
-                    else
-                        Icons.Default.ExpandMore,
-                    contentDescription = null
+                // 2️⃣ Gradient fade (this creates the “banner → content” effect)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.background
+                                ),
+                                startY = 120f // controls where fade begins
+                            )
+                        )
                 )
-            }
 
-            /* ---------- COLLAPSIBLE EMPLOYEE ROW ---------- */
-            AnimatedVisibility(visible = employeesExpanded) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // 3️⃣ Overlayed title + address
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
                 ) {
-                    items(employees) { emp ->
-                        EmployeeItem(emp)
-                    }
+                    Text(
+                        text = project.name ?: "Unnamed Project",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White
+                    )
+
+                    Text(
+                        text = project.address ?: "",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
                 }
             }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+
+                Text(
+                    text = project.description ?: "",
+                    modifier = Modifier.padding(top = 16.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                /* ---------- EMPLOYEES HEADER (CLICKABLE) ---------- */
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { employeesExpanded = !employeesExpanded }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                )
+                {
+                    Text(
+                        text = "Employees (${employees.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Icon(
+                        imageVector = if (employeesExpanded)
+                            Icons.Default.ExpandLess
+                        else
+                            Icons.Default.ExpandMore,
+                        contentDescription = null
+                    )
+                }
+
+                /* ---------- COLLAPSIBLE EMPLOYEE ROW ---------- */
+                AnimatedVisibility(visible = employeesExpanded) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(employees) { emp ->
+                            EmployeeItem(emp)
+                        }
+                    }
+                }
 
 //        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-            /* ---------- TASKS HEADER ---------- */
-            Row (
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { tasksExpanded = !tasksExpanded }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-
-            ){
-                Text("Tasks (${tasks.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-
-
-
-                Icon(
-                    imageVector = if (tasksExpanded)
-                        Icons.Default.ExpandLess
-                    else
-                        Icons.Default.ExpandMore,
-                    contentDescription = null
-                )
-
-            }
-
-            AnimatedVisibility(visible = tasksExpanded) {
-
-                Column(
+                /* ---------- TASKS HEADER ---------- */
+                Row (
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
-                ){
+                        .clickable { tasksExpanded = !tasksExpanded }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
 
-                    // 🔹 Status picker
-                    TabRow(selectedTabIndex = selectedTab) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index },
-                                text = { Text(title) },
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                        }
-                    }
+                )
+                {
+                    Text("Tasks (${tasks.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                    LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+
+
+                    Icon(
+                        imageVector = if (tasksExpanded)
+                            Icons.Default.ExpandLess
+                        else
+                            Icons.Default.ExpandMore,
+                        contentDescription = null
+                    )
+
+                }
+
+                AnimatedVisibility(visible = tasksExpanded) {
+
+                    Column(
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
                             .fillMaxWidth()
                             .padding(top = 10.dp)
-                    ) {
-                        items(filteredTasks) { tsk ->
-                            TaskItem(tsk,
-                                modifier = Modifier.fillMaxWidth(), navController = navcontroller
+                    )
+                    {
+
+                        // 🔹 Status picker
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                FilterChip(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    label = {
+                                        Text(
+                                            title,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                        ) {
+                            items(filteredTasks) { tsk ->
+                                TaskItem(tsk,
+                                    modifier = Modifier.fillMaxWidth(), navController = navcontroller
+                                )
+                            }
+                        }
+                    }
+
+
+                }
+
+                Box(modifier = Modifier.fillMaxSize())
+                {
+
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalAlignment = Alignment.End
+                    ){
+
+                        AnimatedVisibility(expanded) {
+
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
+                                horizontalAlignment = Alignment.End
+
+                            )
+                            {
+                                FloatingActionButton(
+                                    onClick = {
+                                        showSheet = true
+                                    },
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    shape = CircleShape,
+                                    modifier = Modifier
+                                        .padding(1.dp)
+
+                                ){
+                                    Icon(
+                                        imageVector = Icons.Default.PersonAdd,
+                                        contentDescription = "Add employee"
+                                    )
+
+                                }
+
+                                FloatingActionButton(
+                                    onClick = { showtaskform = true },
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    shape = CircleShape,
+                                    modifier = Modifier
+                                        .padding(1.dp)
+
+                                ){
+                                    Icon(
+                                        imageVector = Icons.Default.PlaylistAdd,
+                                        contentDescription = "Add task"
+                                    )
+
+                                }
+                            }
+                        }
+
+
+                        // 🔹 Main FAB
+                        FloatingActionButton(
+                            onClick = { expanded = !expanded }
+                        ) {
+                            Icon(
+                                imageVector = if (expanded)
+                                    Icons.Default.Close
+                                else
+                                    Icons.Default.Add,
+                                contentDescription = "Actions"
+                            )
+                        }
+
+                    }
+
+
+                    if(showSheet){
+                        ModalBottomSheet(
+                            onDismissRequest = { showSheet = false },
+                            sheetState = sheetState
+                        ){
+                            //content of the sheet
+                            //add employee
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            ){
+                                Text("Add Employee to Project",
+                                    style = MaterialTheme.typography.titleMedium)
+
+                                ExposedDropdownMenuBox(
+                                    expanded = dropdownExpanded,
+                                    onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+                                    modifier = Modifier.fillMaxWidth()
+
+                                ) {
+                                    TextField(
+                                        value = selectedEmployee?.let{
+                                            "${it.Employee_fn} ${it.Employee_ln}"
+                                        } ?: "Select Employee",
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                                        },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth()
+
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = dropdownExpanded,
+                                        onDismissRequest = { dropdownExpanded = false }
+                                    ) {
+//                                Text("DEBUG: ${allEmployees.size} employees")
+                                        allEmployees.forEach { emp ->
+                                            DropdownMenuItem(
+                                                text = { Text("${emp.Employee_fn} ${emp.Employee_ln}") },
+                                                onClick = {
+                                                    selectedEmployee = emp
+                                                    dropdownExpanded = false
+                                                }
+                                            )
+
+                                        }
+                                    }
+                                }
+
+                                ///button to add employee
+                                Button(
+                                    onClick = {
+                                        if (selectedEmployee != null) {
+                                            viewModel.addEmployeeToProject(project.id, selectedEmployee!!.EID)
+                                        }
+                                    }
+
+                                ){
+                                    Text("Add")
+                                }
+
+
+                            }
+
+                        }
+                    }
+
+                    if(showtaskform){
+                        ModalBottomSheet(
+                            onDismissRequest = {showtaskform = false},
+                            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                        ){
+                            TaskForm(
+                                projectId = project.id!!,
+                                allEmployees = allEmployees,
+                                onDismiss = { showtaskform = false },
+                                onSave = { task, employeeId ->
+                                    viewModel.addTaskAndAssign(task, employeeId)
+                                    showtaskform = false
+                                }
                             )
                         }
                     }
-                }
 
+
+
+
+                }
 
             }
 
-            Box(modifier = Modifier.fillMaxSize()) {
 
 
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.End
-                ){
-
-                    AnimatedVisibility(expanded) {
-
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
-                            horizontalAlignment = Alignment.End
-
-                        )
-                        {
-                            FloatingActionButton(
-                                onClick = {
-                                    showSheet = true
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .padding(1.dp)
-
-                            ){
-                                Icon(
-                                    imageVector = Icons.Default.PersonAdd,
-                                    contentDescription = "Add employee"
-                                )
-
-                            }
-
-                            FloatingActionButton(
-                                onClick = { showtaskform = true },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .padding(1.dp)
-
-                            ){
-                                Icon(
-                                    imageVector = Icons.Default.PlaylistAdd,
-                                    contentDescription = "Add task"
-                                )
-
-                            }
-                        }
-                    }
-
-
-                    // 🔹 Main FAB
-                    FloatingActionButton(
-                        onClick = { expanded = !expanded }
-                    ) {
-                        Icon(
-                            imageVector = if (expanded)
-                                Icons.Default.Close
-                            else
-                                Icons.Default.Add,
-                            contentDescription = "Actions"
-                        )
-                    }
-
-                }
-
-
-                if(showSheet){
-                    ModalBottomSheet(
-                        onDismissRequest = { showSheet = false },
-                        sheetState = sheetState
-                    ){
-                        //content of the sheet
-                        //add employee
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp)
-                        ){
-                            Text("Add Employee to Project",
-                                style = MaterialTheme.typography.titleMedium)
-
-                            ExposedDropdownMenuBox(
-                                expanded = dropdownExpanded,
-                                onExpandedChange = { dropdownExpanded = !dropdownExpanded },
-                                modifier = Modifier.fillMaxWidth()
-
-                            ) {
-                                TextField(
-                                    value = selectedEmployee?.let{
-                                        "${it.Employee_fn} ${it.Employee_ln}"
-                                    } ?: "Select Employee",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
-                                    },
-                                    modifier = Modifier.menuAnchor().fillMaxWidth()
-
-                                )
-
-                                ExposedDropdownMenu(
-                                    expanded = dropdownExpanded,
-                                    onDismissRequest = { dropdownExpanded = false }
-                                ) {
-//                                Text("DEBUG: ${allEmployees.size} employees")
-                                    allEmployees.forEach { emp ->
-                                        DropdownMenuItem(
-                                            text = { Text("${emp.Employee_fn} ${emp.Employee_ln}") },
-                                            onClick = {
-                                                selectedEmployee = emp
-                                                dropdownExpanded = false
-                                            }
-                                        )
-
-                                    }
-                                }
-                            }
-
-                            ///button to add employee
-                            Button(
-                                onClick = {
-                                    if (selectedEmployee != null) {
-                                        viewModel.addEmployeeToProject(project.id, selectedEmployee!!.EID)
-                                    }
-                                }
-
-                            ){
-                                Text("Add")
-                            }
-
-
-                        }
-
-                    }
-                }
-
-                if(showtaskform){
-                    ModalBottomSheet(
-                        onDismissRequest = {showtaskform = false},
-                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                    ){
-                        TaskForm(
-                            projectId = project.id!!,
-                            allEmployees = allEmployees,
-                            onDismiss = { showtaskform = false },
-                            onSave = { task, employeeId ->
-                                viewModel.addTaskAndAssign(task, employeeId)
-                                showtaskform = false
-                            }
-                        )
-                    }
-                }
-
-
-
-
-            }
 
 
         }
