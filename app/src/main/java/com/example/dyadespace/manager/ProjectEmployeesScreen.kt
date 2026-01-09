@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dyadespace.authScreens.AuthViewModel
+import com.example.dyadespace.authScreens.ProjectViewModel
 import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.EmployeeRow
@@ -30,14 +31,14 @@ import com.example.dyadespace.viewitems.EmployeeRow
 fun ProjectEmployeesScreen(
     projectId: String,
     navController: NavController,
-    viewModel: AuthViewModel
+    projectViewModel: ProjectViewModel,
 ) {
     LaunchedEffect(projectId) {
-        viewModel.fetchProjectEmployees(projectId)
+        projectViewModel.fetchProjectEmployees(projectId)
     }
 
-    val project by viewModel.aproject.collectAsState()
-    val employees by viewModel.projectemployees.collectAsState()
+    val project by projectViewModel.aproject.collectAsState()
+    val employees by projectViewModel.projectemployees.collectAsState()
 
 
     Surface(

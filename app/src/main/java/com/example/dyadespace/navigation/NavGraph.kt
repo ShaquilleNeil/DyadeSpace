@@ -18,7 +18,9 @@ import androidx.navigation.navArgument
 import com.example.dyadespace.TestConnectionScreen
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.authScreens.LoginScreen
+import com.example.dyadespace.authScreens.ProjectViewModel
 import com.example.dyadespace.authScreens.SignupScreen
+import com.example.dyadespace.authScreens.TaskViewModel
 import com.example.dyadespace.manager.ManagerMainScreen
 import com.example.dyadespace.manager.ProjectEmployeesScreen
 import com.example.dyadespace.manager.ProjectViewContent
@@ -29,6 +31,16 @@ fun AppNavGraph(viewModel: AuthViewModel) {
 
     val navController = rememberNavController()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val projectViewModel: ProjectViewModel = viewModel()
+
+    val taskViewModel: TaskViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return TaskViewModel(projectViewModel) as T
+            }
+        }
+    )
 
 
     if (isLoggedIn == null) {
@@ -79,7 +91,7 @@ fun AppNavGraph(viewModel: AuthViewModel) {
             ){ backStackEntry ->
                 val projectId = backStackEntry.arguments?.getString("projectId")
                 // Use the projectId as needed
-                ProjectViewContent(projectId = projectId!!, navController = navController, viewModel = viewModel)
+                ProjectViewContent(projectId = projectId!!, navController = navController, viewModel = viewModel, projectViewModel = projectViewModel, taskViewModel = taskViewModel)
             }
 
 
@@ -91,7 +103,7 @@ fun AppNavGraph(viewModel: AuthViewModel) {
                 val taskId = backStackEntry.arguments?.getString("taskId")
                 // Use the taskId as needed
 
-                TaskView(taskId = taskId!!, navController = navController, viewModel = viewModel)
+                TaskView(taskId = taskId!!, navController = navController, taskViewModel = taskViewModel)
 
             }
 
@@ -100,7 +112,7 @@ fun AppNavGraph(viewModel: AuthViewModel) {
             ){ backStackEntry ->
                 val projectId = backStackEntry.arguments?.getString("projectId")
                 // Use the projectId as needed
-                ProjectEmployeesScreen(projectId = projectId!!, navController = navController, viewModel = viewModel)
+                ProjectEmployeesScreen(projectId = projectId!!, navController = navController, projectViewModel = projectViewModel)
 
             }
 

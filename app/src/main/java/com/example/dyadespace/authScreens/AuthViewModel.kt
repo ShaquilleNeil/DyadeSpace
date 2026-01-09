@@ -31,7 +31,7 @@ import io.github.jan.supabase.auth.status.SessionStatus
 
 
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel: ViewModel() {
 
 
 
@@ -41,31 +41,8 @@ class AuthViewModel : ViewModel() {
     val currentEmployee: StateFlow<Employee?> = _currentEmployee.asStateFlow() //value to pass to screens
      private val _employees = MutableStateFlow<List<Employee>>(emptyList())
     val employees: StateFlow<List<Employee>> = _employees.asStateFlow()
-    private val _allTasks = MutableStateFlow<List<Tasks>>(emptyList())
-    val allTasks = _allTasks.asStateFlow()
-
-    private val _myTasks = MutableStateFlow<List<Tasks>>(emptyList())
-    val myTasks = _myTasks.asStateFlow()
-
-    private val _taskbyid = MutableStateFlow<Tasks?>(null)
-    val taskbyid: StateFlow<Tasks?> = _taskbyid
 
 
-    private val _assignedTasks = MutableStateFlow<List<EmployeeTask>>(emptyList())
-    val assignedTasks = _assignedTasks.asStateFlow()
-
-
-    private val _projects = MutableStateFlow<List<Projects>>(emptyList())
-    val projects: StateFlow<List<Projects>> = _projects.asStateFlow()
-
-    val _aproject = MutableStateFlow<Projects?>(null)
-    val aproject: StateFlow<Projects?> = _aproject.asStateFlow()
-
-    val _projectemployees = MutableStateFlow<List<Employee>>(emptyList())
-    val projectemployees: StateFlow<List<Employee>> = _projectemployees
-
-    val _projectasks = MutableStateFlow<List<Tasks>>(emptyList())
-    val projectasks: StateFlow<List<Tasks>> = _projectasks
 
 
 
@@ -269,90 +246,7 @@ init {
 
 
     // Fetch every task in the system (Manager view)
-    fun fetchAllTasks() {
-        viewModelScope.launch {
-            try {
-                val tasks = SupabaseClient.client.postgrest["tasks"]
-                    .select()
-                    .decodeList<Tasks>()
 
-                _allTasks.value = tasks
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    // Fetch only tasks assigned to currently logged-in employee
-    fun fetchMyTasks() {
-        viewModelScope.launch {
-            try {
-                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
-                    ?: throw Exception("User not authenticated")
-
-                // 1️⃣ Get employee_task links
-                val assigned = SupabaseClient.client.postgrest["employee_tasks"]
-                    .select(columns = Columns.list("id", "EID")) {
-                        filter { eq("EID", userId) }
-                    }
-                    .decodeList<EmployeeTask>()
-
-                val taskIds = assigned.map { it.id }
-
-                if (taskIds.isEmpty()) {
-                    _myTasks.value = emptyList()
-                    return@launch
-                }
-
-                // 2️⃣ Fetch tasks matching taskIds
-                val tasks = SupabaseClient.client.postgrest["tasks"]
-                    .select(
-                        columns = Columns.list(
-                            "id","title","description","deadline",
-                            "status","created_at","project_id"
-                        )
-                    ) {
-                        filter {
-                            taskIds.forEach { id ->
-                                or { eq("id", id) }
-                            }
-                        }  // <-- No import needed
-                    }
-                    .decodeList<Tasks>()
-
-                _myTasks.value = tasks  // 🔥 Push to StateFlow
-
-                println("Loaded tasks: $tasks")
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun fetchTaskById(taskId: String) {
-        viewModelScope.launch {
-            try{
-                val tsk = SupabaseClient.client.postgrest["tasks"]
-                    .select{
-                        filter {
-                            eq("id", taskId)
-                        }
-                    }
-                    .decodeSingle<Tasks>()
-
-                _taskbyid.value = tsk
-
-
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-        }
-
-    }
 
     //assign task to employee
 //    fun assignTask(taskId: String, employeeId: String){
@@ -402,187 +296,8 @@ init {
 //    }
 
 
-    fun addTaskAndAssign(task: Tasks, employeeId: String?) {
-        viewModelScope.launch {
-            try {
-                // 1️⃣ Insert task and get generated ID
-                val insertedTask = SupabaseClient.client
-                    .postgrest["tasks"]
-                    .insert(task) {
-                        select()
-                    }
-                    .decodeSingle<Tasks>()
-
-                val taskId = insertedTask.id ?: return@launch
-
-                // 2️⃣ Assign employee if selected
-                if (!employeeId.isNullOrBlank()) {
-                    SupabaseClient.client.postgrest["employee_tasks"]
-                        .insert(
-                            mapOf(
-                                "id" to taskId,
-                                "EID" to employeeId
-                            )
-                        )
-                }
-
-                SupabaseClient.client.postgrest["project_tasks"]
-                    .insert(
-                        ProjectTaskInsert(
-                            project_id = insertedTask.project_id!!,
-                            task_id = insertedTask.id!!
-                        )
-                    )
-
-                // 3️⃣ Refresh UI
-                fetchProjectTasks(insertedTask.project_id!!)
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun updateTaskStatus(taskId: String, newStatus: String) {
-        viewModelScope.launch{
-            try {
-                SupabaseClient.client.postgrest["tasks"].update(
-                    mapOf("status" to newStatus)
-
-                ){
-                    filter { eq("id", taskId) }
-                }
-                fetchTaskById(taskId)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
 
-    fun fetchAllProjects(){
-        viewModelScope.launch {
-            try {
-                val projects = SupabaseClient.client.postgrest["projects"].select().decodeList<Projects>()
-                _projects.value = projects
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    //fetch employees for project
-    fun fetchProjectEmployees(projectId: String) {
-        viewModelScope.launch {
-            try {
-                val employees = SupabaseClient.client
-                    .postgrest["projects_employees"]
-                    .select(
-                        columns = Columns.raw(
-                            """
-                        employees (
-                            "EID",
-                            "Employee_fn",
-                            "Employee_ln",
-                            "Employee_email",
-                            "Employee_phone",
-                            "role",
-                            "Avatar_url"
-                        )
-                        """
-                        )
-                    ) {
-                        filter {
-                            eq("id", projectId)
-                        }
-                    }
-                    .decodeList<ProjectEmployeeWithEmployee>()
-                    .map { it.employees }
-
-                _projectemployees.value = employees
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    // add employees to project
-    fun addEmployeeToProject(projectId: String?, employeeId: String){
-        viewModelScope.launch {
-            try {
-                SupabaseClient.client.postgrest["projects_employees"].insert(
-                    mapOf(
-                        "id" to projectId,
-                        "EID" to employeeId
-                    )
-                )
-
-                fetchProjectEmployees(projectId!!)
-
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun fetchProjectTasks(projectId: String) {
-        viewModelScope.launch {
-            try {
-                val tasks = SupabaseClient.client
-                    .postgrest["project_tasks"]
-                    .select(
-                        columns = Columns.raw(
-                            """
-                        tasks!project_tasks_Id_fkey (
-                            id,
-                            title,
-                            description,
-                            deadline,
-                            status,
-                            created_at,
-                            project_id
-                        )
-                        """
-                        )
-                    ) {
-                        filter {
-                            eq("project_id", projectId) // id = project_id
-                        }
-                    }
-                    .decodeList<ProjectTaskWithTask>()
-                    .map { it.tasks }
-
-                _projectasks.value = tasks
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-
-
-    //fetch project by id
-    fun fetchProjectById(projectId: String){
-        viewModelScope.launch {
-            try {
-                val project = SupabaseClient.client.postgrest["projects"]
-                    .select{
-                        filter {
-                            eq("id", projectId)
-
-                        }
-                    }
-                    .decodeSingle<Projects>()
-                _aproject.value = project
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
 
 

@@ -29,25 +29,28 @@ import com.example.dyadespace.classes.Tasks
 import com.example.dyadespace.viewitems.ProjectItem
 import com.example.dyadespace.viewitems.TaskItem
 import com.example.dyadespace.R
-
-
-
+import com.example.dyadespace.authScreens.ProjectViewModel
+import com.example.dyadespace.authScreens.TaskViewModel
+import com.example.dyadespace.ui.preview.previewData
 
 
 @Composable
-fun ManagerHome(viewModel: AuthViewModel, navController: NavController){
+fun ManagerHome(viewModel: AuthViewModel, projectViewModel: ProjectViewModel, taskViewModel: TaskViewModel, navController: NavController, isPreview: Boolean = false){
 
     //runs once the screen loads to fire the fetch role again
     LaunchedEffect(Unit) {
-        viewModel.fetchRole { }
-        viewModel.fetchAllEmployees()
-        viewModel.fetchAllTasks()
-        viewModel.fetchAllProjects()
+        if(!isPreview){
+            viewModel.fetchRole { }
+            viewModel.fetchAllEmployees()
+            taskViewModel.fetchAllTasks()
+            projectViewModel.fetchAllProjects()
+        }
+
     }
     val employee = viewModel.currentEmployee.collectAsState().value
     val employees = viewModel.employees.collectAsState().value
-    val tasks = viewModel.allTasks.collectAsState().value
-    val projects = viewModel.projects.collectAsState().value
+    val tasks = taskViewModel.allTasks.collectAsState().value
+    val projects = projectViewModel.projects.collectAsState().value
 
 
 
@@ -67,73 +70,21 @@ fun ManagerHome(viewModel: AuthViewModel, navController: NavController){
         }
 
 
-//        Text("Recent Tasks", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
-//        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-//              items(tasks) { tsk ->
-//                  TaskItem(tsk)
-//              }
-//        }
-
-//        Text("Employee List", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
-//        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-//            items(employees) { emp ->
-//                EmployeeItem(emp)
-//            }
-//        }
 
 
     }
 }
 
-//@Composable
-//fun EmployeeItem(emp: Employee) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(horizontal = 16.dp, vertical = 8.dp),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Column(modifier = Modifier.padding(16.dp)) {
-//
-//            Text(
-//                text = "${emp.Employee_fn} ${emp.Employee_ln}",
-//                style = MaterialTheme.typography.titleMedium
-//            )
-//
-//            Text(
-//                text = emp.Employee_email ?: "",
-//                style = MaterialTheme.typography.bodyMedium,
-//                modifier = Modifier.padding(top = 6.dp)
-//            )
-//x
-//            Text(
-//                text = emp.role ?: "",
-//                style = MaterialTheme.typography.labelMedium,
-//                modifier = Modifier.padding(top = 4.dp)
-//            )
-//        }
-//    }
-//}
+
 
 
 
 @Preview(showBackground = true)
 @Composable
 fun ManagerHomePreview() {
-    val fakeVM = AuthViewModel().apply {
-        setFakeEmployee(
-            Employee(
-                EID = "123",
-                Employee_fn = "Shaq",
-                Employee_ln = "Neil",
-                Employee_phone = "123-4567",
-                Employee_email = "shaq@mail.com",
-                role = "manager",
-                Avatar_url = null,
-                created_at = "Now"
-            )
-        )
-    }
+   val fakeVM = previewData.authViewModel()
+    val fakep = previewData.projectViewModel()
+    val faket = previewData.taskViewModel()
 
-    ManagerHome(viewModel = fakeVM, navController = rememberNavController())
+    ManagerHome(viewModel = fakeVM, navController = rememberNavController(), projectViewModel = fakep, taskViewModel =faket, isPreview = true)
 }

@@ -66,8 +66,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.dyadespace.authScreens.AuthViewModel
+import com.example.dyadespace.authScreens.ProjectViewModel
+import com.example.dyadespace.authScreens.TaskViewModel
 import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.classes.Projects
 import com.example.dyadespace.classes.Tasks
@@ -83,7 +86,9 @@ import io.github.jan.supabase.realtime.Column
 --------------------------------------------------- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee> , viewModel: AuthViewModel, navcontroller: NavController) {
+fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee>, onAddEmployee: (String, String) -> Unit,
+                  onAddTask: (Tasks, String?) -> Unit,
+                  onViewAllEmployees: (String) -> Unit, navcontroller: NavController) {
 
     var employeesExpanded by remember { mutableStateOf(false) }
     var tasksExpanded by remember { mutableStateOf(false) }
@@ -449,7 +454,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                                 Button(
                                     onClick = {
                                         if (selectedEmployee != null) {
-                                            viewModel.addEmployeeToProject(project.id, selectedEmployee!!.EID)
+                                            onAddEmployee(project.id!!, selectedEmployee!!.EID)
                                         }
                                     }
 
@@ -473,7 +478,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                                 allEmployees = allEmployees,
                                 onDismiss = { showtaskform = false },
                                 onSave = { task, employeeId ->
-                                    viewModel.addTaskAndAssign(task, employeeId)
+                                    onAddTask(task, employeeId)
                                     showtaskform = false
                                 }
                             )
@@ -506,20 +511,22 @@ fun ProjectViewContent(
     projectId: String,
 
     navController: NavController,
-    viewModel: AuthViewModel
+    viewModel: AuthViewModel,
+    projectViewModel: ProjectViewModel,
+    taskViewModel: TaskViewModel
 ) {
     LaunchedEffect(projectId) {
         println("🟡 ProjectViewContent projectId = $projectId")
-        viewModel.fetchProjectById(projectId)
-        viewModel.fetchProjectEmployees(projectId)
-        viewModel.fetchProjectTasks(projectId)
+        projectViewModel.fetchProjectById(projectId)
+        projectViewModel.fetchProjectEmployees(projectId)
+        projectViewModel.fetchProjectTasks(projectId)
         viewModel.fetchAllEmployees()
 
     }
 
-    val project by viewModel.aproject.collectAsState()
-    val employees by viewModel.projectemployees.collectAsState()
-    val tasks by viewModel.projectasks.collectAsState()
+    val project by projectViewModel.aproject.collectAsState()
+    val employees by projectViewModel.projectemployees.collectAsState()
+    val tasks by projectViewModel.projectasks.collectAsState()
     val allEmployees by viewModel.employees.collectAsState()
 
 
@@ -528,7 +535,22 @@ fun ProjectViewContent(
     if (project == null) {
         Text("Loading project…")
     } else {
-        ProjectViewUi(project = project!!, employees = employees, tasks = tasks, allEmployees = allEmployees, viewModel = viewModel, navcontroller = navController)
+        ProjectViewUi(
+            project = project!!,
+            employees = employees,
+            tasks = tasks,
+            allEmployees = allEmployees,
+            navcontroller = navController,
+            onViewAllEmployees = { id ->
+                navController.navigate("projectEmployeesScreen/$id")
+            },
+            onAddEmployee = { projectId, employeeId ->
+                projectViewModel.addEmployeeToProject(projectId, employeeId)
+            },
+            onAddTask = { task, employeeId ->
+                taskViewModel.addTaskAndAssign(task, employeeId)
+            }
+        )
     }
 }
 
@@ -543,62 +565,40 @@ fun ProjectViewContent(
 )
 @Composable
 fun ProjectViewPreview() {
-
-    DyadeSpaceTheme() {
-        Surface(
-            color = MaterialTheme.colorScheme.background
-        ) {
-            ProjectViewUi(
-                project = Projects(
-                    id = "P123",
-                    name = "Downtown Office Renovation",
-                    description = "Complete interior renovation including electrical, drywall, and finishes.",
-                    address = "Montreal, QC",
-                    photo_url = "https://picsum.photos/1200/800"
-                ),
-                employees = listOf(
-                    Employee(
-                        EID = "E1",
-                        Employee_fn = "Shaq",
-                        Employee_ln = "Neil",
-                        Employee_phone = "123-4567",
-                        Employee_email = "shaq@example.com",
-                        role = "Manager",
-                        Avatar_url = "https://picsum.photos/200?1"
-                    ),
-                    Employee(
-                        EID = "E2",
-                        Employee_fn = "Alex",
-                        Employee_ln = "Martin",
-                        Employee_phone = "555-9876",
-                        Employee_email = "alex@example.com",
-                        role = "Electrician",
-                        Avatar_url = "https://picsum.photos/200?2"
-                    )
-                ),
-                tasks = listOf(
-                    Tasks(
-                        id = "T1",
-                        title = "Install drywall",
-                        description = "Finish drywall installation on floor 2",
-                        status = "in_progress",
-                        deadline = "2023-11-15"
-                    ),
-                    Tasks(
-                        id = "T2",
-                        title = "Electrical rough-in",
-                        description = "Run wiring for lighting",
-                        status = "pending",
-                        deadline = "2023-11-20"
-                    )
-                ),
-                allEmployees = listOf(),
-                viewModel = AuthViewModel(),
-                navcontroller = NavController(LocalContext.current)
-
-            )
-        }
+    DyadeSpaceTheme {
+        ProjectViewUi(
+            project = Projects(
+                id = "P123",
+                name = "Downtown Office Renovation",
+                description = "Complete interior renovation including electrical, drywall, and finishes.",
+                address = "Montreal, QC",
+                photo_url = "https://picsum.photos/1200/800"
+            ),
+            employees = listOf(
+                Employee(
+                    EID = "E1",
+                    Employee_fn = "Shaq",
+                    Employee_ln = "Neil",
+                    Employee_phone = "123-4567",
+                    Employee_email = "shaq@example.com",
+                    role = "Manager",
+                    Avatar_url = null
+                )
+            ),
+            tasks = listOf(
+                Tasks(
+                    id = "T1",
+                    title = "Install drywall",
+                    status = "in-progress",
+                    deadline = "2023-11-15"
+                )
+            ),
+            allEmployees = emptyList(),
+            navcontroller = rememberNavController(),
+            onViewAllEmployees = {},
+            onAddEmployee = { _, _ -> },
+            onAddTask = { _, _ -> }
+        )
     }
-
 }
 

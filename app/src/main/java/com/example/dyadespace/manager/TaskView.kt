@@ -35,20 +35,22 @@ import androidx.navigation.NavController
 import com.example.dyadespace.authScreens.AuthViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
+import com.example.dyadespace.authScreens.TaskViewModel
+import com.example.dyadespace.ui.preview.previewData
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 
 @Composable
 fun TaskView(
     taskId: String,
     navController: NavController,
-    viewModel: AuthViewModel
+    taskViewModel: TaskViewModel,
 ) {
 
     LaunchedEffect(taskId) {
-        viewModel.fetchTaskById(taskId)
+        taskViewModel.fetchTaskById(taskId)
     }
 
-    val tsk = viewModel.taskbyid.collectAsState().value
+    val tsk = taskViewModel.taskbyid.collectAsState().value
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -204,7 +206,7 @@ fun TaskView(
             if (tsk?.status == "todo") {
                 Button(
                     onClick = {
-                        viewModel.updateTaskStatus(taskId, "in-progress")
+                        taskViewModel.updateTaskStatus(taskId, "in-progress")
                     },
                     modifier = Modifier.width(200.dp).padding(top = 16.dp),
                     shape = MaterialTheme.shapes.medium,
@@ -222,7 +224,7 @@ fun TaskView(
             } else if (tsk?.status == "in-progress") {
                 Button(
                     onClick = {
-                        viewModel.updateTaskStatus(taskId, "done")
+                        taskViewModel.updateTaskStatus(taskId, "done")
                     },
                     modifier = Modifier.width(200.dp).padding(top = 16.dp).padding(bottom = 16.dp),
                     shape = MaterialTheme.shapes.medium,
@@ -267,11 +269,11 @@ fun TaskViewPreview() {
         Surface(
             color = MaterialTheme.colorScheme.background
         ) {
-            val fakeViewModel = AuthViewModel()
+            val fakeViewModel = previewData.taskViewModel()
             TaskView(
                 taskId = "preview",
                 navController = NavController(LocalContext.current),
-                viewModel = fakeViewModel
+                taskViewModel = fakeViewModel
             )
         }
 

@@ -38,16 +38,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
+import com.example.dyadespace.authScreens.TaskViewModel
+import com.example.dyadespace.ui.preview.previewData
 
 
 @Composable
-fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
+fun ManagerTasks(viewModel: AuthViewModel, navController: NavController, taskViewModel: TaskViewModel){
     LaunchedEffect(Unit) {
         viewModel.fetchRole {}
-        viewModel.fetchMyTasks()
+        taskViewModel.fetchMyTasks()
     }
 
-    val tasks = viewModel.myTasks.collectAsState().value
+    val tasks = taskViewModel.myTasks.collectAsState().value
 
     // UI-only state (filter)
     val tabs = listOf( "To-Do", "In Progress", "Done")
@@ -146,12 +148,13 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController){
 )
 @Composable
 fun ManagerTasksPreview() {
+    val faket = previewData.taskViewModel()
     DyadeSpaceTheme() {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            ManagerTasks(viewModel(), NavController(LocalContext.current))
+            ManagerTasks(viewModel(), NavController(LocalContext.current), faket)
         }
     }
 
