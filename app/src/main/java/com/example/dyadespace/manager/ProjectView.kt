@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -207,6 +208,14 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
+
+                    TextButton(
+                        onClick = {
+                            project.id?.let {navcontroller.navigate("projectEmployeesScreen/$it")}
+                        }
+                    ) {
+                        Text("View All", style = MaterialTheme.typography.labelSmall)
+                    }
 
                     Icon(
                         imageVector = if (employeesExpanded)
