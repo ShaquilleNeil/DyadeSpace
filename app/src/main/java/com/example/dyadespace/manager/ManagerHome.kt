@@ -82,45 +82,62 @@ fun ManagerHome(viewModel: AuthViewModel, projectViewModel: ProjectViewModel, ta
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(10.dp)
+            .padding(5.dp)
     ) {
 
         Text(
             text = stringResource(R.string.projects),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
-                .padding(top = 14.dp)
+                .padding(top = 10.dp, bottom = 10.dp)
                 .align(Alignment.CenterHorizontally)
         )
 
-        DockedSearchBar(
-            inputField = {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.search)) },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Search, contentDescription = null)
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),   // ⬅️ smaller radius
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
-                    )
-                )
-
-            },
-            expanded = false,              // 🔒 never expands
-            onExpandedChange = {},         // 🔒 ignore expansion
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            content = {
-                // intentionally empty — no suggestions
-            }
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(0.dp)
         )
+        {
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp), // 👈 compact height
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.search),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Filled.Search,
+                        contentDescription = null
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,   // 👈 grey bg
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+
+                    cursorColor = MaterialTheme.colorScheme.primary
+                ),
+                textStyle = MaterialTheme.typography.bodySmall
+            )
+        }
+
+
+
 
 
 

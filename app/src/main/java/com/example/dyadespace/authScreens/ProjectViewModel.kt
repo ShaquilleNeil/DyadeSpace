@@ -159,4 +159,22 @@ class ProjectViewModel: ViewModel() {
     }
 
 
+    fun deleteProjectEmployee(employeeId: String, projectId: String){
+        viewModelScope.launch {
+            try {
+                SupabaseClient.client.postgrest["projects_employees"].delete {
+                    filter {
+                        eq("EID", employeeId)
+                    }
+                }
+
+                fetchProjectEmployees(projectId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+        }
+    }
+
+
 }

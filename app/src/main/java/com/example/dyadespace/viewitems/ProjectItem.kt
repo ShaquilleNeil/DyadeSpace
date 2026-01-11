@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandCircleDown
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
@@ -64,7 +65,7 @@ fun ProjectItem(p: Projects, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .animateContentSize(), // ⭐ allows expand/collapse
         shape = RoundedCornerShape(15.dp),
         elevation = CardDefaults.cardElevation(8.dp)
@@ -105,7 +106,7 @@ fun ProjectItem(p: Projects, navController: NavController) {
                         if (projectexpanded)
                             Icons.Default.ExpandLess
                         else
-                            Icons.Default.ExpandMore,
+                            Icons.Default.ExpandCircleDown,
                     contentDescription = null
                 )
             }
@@ -145,7 +146,7 @@ fun ProjectItem(p: Projects, navController: NavController) {
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(16.dp)
+                            .padding(10.dp)
                     ) {
                         Text(
                             text = p.description ?: "",
