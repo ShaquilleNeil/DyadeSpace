@@ -48,9 +48,13 @@ fun TaskView(
 
     LaunchedEffect(taskId) {
         taskViewModel.fetchTaskById(taskId)
+        taskViewModel.getEmployeesForTask(taskId)
     }
 
     val tsk = taskViewModel.taskbyid.collectAsState().value
+    val assignedemployees = taskViewModel.assignedEmployees.collectAsState().value
+
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -165,10 +169,18 @@ fun TaskView(
                     Text("Assigned To",
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 4.dp))
-                    Text("Employee Name",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 4.dp))
+                    if (assignedemployees.isNotEmpty()) {
+                        assignedemployees.forEach { employee ->
+                            Text("${employee.Employee_fn} ${employee.Employee_ln}",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(bottom = 4.dp))
+                        }
+                    } else {
+                        Text("No employees assigned")
+                    }
+
+
 
 
 

@@ -53,7 +53,7 @@ fun EmployeeRow(
             )
 
             Text(
-                text = emp.role,
+                text = emp.role ?: "unknown",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

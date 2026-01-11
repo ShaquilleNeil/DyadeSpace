@@ -48,7 +48,7 @@ fun EmployeeItem(emp: Employee) {
 
             )
 
-            Text(emp.role,
+            Text(emp.role ?: "unknown" ,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray,
                 maxLines = 1
