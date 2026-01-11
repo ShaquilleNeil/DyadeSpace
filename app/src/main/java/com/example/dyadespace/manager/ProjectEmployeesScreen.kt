@@ -8,25 +8,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DockedSearchBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.dyadespace.R
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.authScreens.ProjectViewModel
 import com.example.dyadespace.classes.Employee
 import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 import com.example.dyadespace.viewitems.EmployeeRow
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectEmployeesScreen(
     projectId: String,
@@ -39,6 +54,18 @@ fun ProjectEmployeesScreen(
 
     val project by projectViewModel.aproject.collectAsState()
     val employees by projectViewModel.projectemployees.collectAsState()
+
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredEmployees = employees.filter { employee ->
+        employee.Employee_fn?.contains(searchQuery, ignoreCase = true) ?: false ||
+                employee.Employee_ln?.contains(searchQuery, ignoreCase = true) ?: false
+    }
+
+    val displayedEmployees = if (searchQuery.isBlank()) employees else filteredEmployees
+
+
+
+
 
 
     Surface(
@@ -54,16 +81,45 @@ fun ProjectEmployeesScreen(
                 modifier = Modifier.padding(start = 16.dp)
             )
 
-            Text("${employees.size} employees",
+            Text("Employees(${employees.size} )",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
 
+            DockedSearchBar(
+                inputField = {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(stringResource(R.string.search)) },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Search, contentDescription = null)
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),   // ⬅️ smaller radius
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
+                        )
+                    )
+
+                },
+                expanded = false,              // 🔒 never expands
+                onExpandedChange = {},         // 🔒 ignore expansion
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                content = {
+                    // intentionally empty — no suggestions
+                }
+            )
+
             Divider()
 
             ProjectEmployeesUi(
-                employees = employees,
+                employees = displayedEmployees,
                 onRemove = { emp ->
                     // viewModel.removeEmployeeFromProject(projectId, emp.EID)
                 }

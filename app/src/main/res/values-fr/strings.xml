@@ -9,4 +9,5 @@
     <string name="editprofile">Modifier le profil</string>
     <string name="savechanges">Enregistrer les modifications</string>
     <string name="logout">Déconnexion</string>
+    <string name="search">Rechercher</string>
 </resources>
