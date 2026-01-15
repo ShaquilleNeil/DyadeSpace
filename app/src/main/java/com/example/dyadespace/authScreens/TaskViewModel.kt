@@ -170,6 +170,16 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
         }
     }
 
+    fun deleteTask(taskId: String, projectId: String) {
+        viewModelScope.launch{
+
+            SupabaseClient.client.postgrest["tasks"].delete {
+                filter { eq("id", taskId) }
+            }
+            ProjectViewModel.fetchProjectTasks(projectId)
+        }
+    }
+
     fun updateTaskStatus(taskId: String, newStatus: String) {
         viewModelScope.launch {
             try {

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ExpandCircleDown
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +51,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
 @Composable
-fun TaskItem(tsk: Tasks, modifier: Modifier = Modifier, navController: NavController) {
+fun TaskItem(tsk: Tasks,
+             modifier: Modifier = Modifier,
+             navController: NavController,
+             showRemove: Boolean,
+             onRemove: () -> Unit) {
 
 var taskexpanded by remember { mutableStateOf(false) }
 
@@ -105,13 +111,26 @@ var taskexpanded by remember { mutableStateOf(false) }
                 )
             }
 
+            Spacer(modifier = Modifier.weight(1f))
+
+            if(showRemove){
+
+                    Text("Remove",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.clickable {
+                            onRemove()
+                        },
+                        style = MaterialTheme.typography.labelMedium
+
+                    )
+            }
 //////////////////////////////////////////////////////////////////////DROPDOWN ICON////////////////////////////////////////
             Spacer(modifier = Modifier.weight(1f))
             Icon(
                 imageVector = if (taskexpanded)
                     Icons.Default.ExpandLess
                 else
-                    Icons.Default.ExpandMore,
+                    Icons.Default.ExpandCircleDown,
                 contentDescription = null
             )
 
@@ -190,7 +209,9 @@ fun TaskItemPreview() {
                     project_id = null
                 ),
                 modifier = Modifier,
-                navController = NavController(LocalContext.current)
+                navController = NavController(LocalContext.current),
+                showRemove = true,
+                onRemove = {}
             )
         }
     }

@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandCircleDown
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -56,6 +57,10 @@ import com.example.dyadespace.classes.Projects
 import com.example.dyadespace.classes.Tasks
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.example.dyadespace.R
+
+
 @Composable
 fun ProjectItem(p: Projects, navController: NavController) {
 
@@ -149,13 +154,13 @@ fun ProjectItem(p: Projects, navController: NavController) {
                             .padding(10.dp)
                     ) {
                         Text(
-                            text = p.description ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "${stringResource(R.string.location)} :",
+                            style = MaterialTheme.typography.labelMedium,
                             color = Color.White,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text( text = p.address ?: "N/A", style = MaterialTheme.typography.labelMedium, color = Color(0xFF34D399) )
+                        Text( text = p.address ?: "N/A", style = MaterialTheme.typography.labelSmall, color = Color(0xFF34D399) )
 
                         Spacer(Modifier.height(8.dp))
 
@@ -168,7 +173,13 @@ fun ProjectItem(p: Projects, navController: NavController) {
                                 containerColor = Color.White.copy(alpha = 0.15f)
                             )
                         ) {
-                            Text("View Details →", color = Color.White)
+                            Text("View Details ", color = Color.White)
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = "Person Icon",
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.White
+                            )
                         }
                     }
                 }

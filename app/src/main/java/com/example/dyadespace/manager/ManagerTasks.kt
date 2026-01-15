@@ -67,7 +67,8 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController, taskVie
 
     Column(
         modifier = Modifier.fillMaxSize().padding(14.dp),
-    ){
+    )
+    {
 
         if (filteredTasks.isEmpty()) {
             androidx.compose.foundation.layout.Box(
@@ -90,7 +91,10 @@ fun ManagerTasks(viewModel: AuthViewModel, navController: NavController, taskVie
                     .padding(top = 10.dp)
             ) {
                 items(filteredTasks) { tsk ->
-                    TaskItem(tsk, navController = navController)
+                    TaskItem(tsk, navController = navController, showRemove = false, onRemove = {
+
+                    }
+                    )
                 }
             }
         }

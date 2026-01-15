@@ -60,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.example.dyadespace.R
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.authScreens.ProjectViewModel
 import com.example.dyadespace.authScreens.TaskViewModel
@@ -174,11 +176,6 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                         color = Color.White
                     )
 
-                    Text(
-                        text = project.address ?: "",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
                 }
             }
 
@@ -189,10 +186,15 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
             ) {
 
                 Text(
-                    text = project.description ?: "",
+                    text = "${stringResource(R.string.location)} :",
                     modifier = Modifier.padding(top = 16.dp),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = project.address ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.85f)
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
@@ -333,7 +335,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                             TextButton(
                                 onClick = {
                                     project.id?.let {
-                                        navcontroller.navigate("projectEmployeesScreen/$it")
+                                        navcontroller.navigate("projectTasksScreen/$it")
                                     }
                                 }
                             ) {
@@ -434,7 +436,8 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                         ) {
                             items(filteredTasks) { tsk ->
                                 TaskItem(tsk,
-                                    modifier = Modifier.fillMaxWidth(), navController = navcontroller
+                                    modifier = Modifier.fillMaxWidth(), navController = navcontroller, showRemove = false, onRemove = {  }
+
                                 )
                             }
                         }

@@ -9,4 +9,5 @@
     <string name="savechanges">Save Changes</string>
     <string name="logout">Logout></string>
     <string name="search">Search</string>
+    <string name="location">Location</string>
 </resources>

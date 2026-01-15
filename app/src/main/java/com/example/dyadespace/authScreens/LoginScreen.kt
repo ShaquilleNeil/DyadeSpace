@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
@@ -14,13 +16,21 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import com.example.dyadespace.R
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordvisible by remember { mutableStateOf(false) }
+
 
     val message: String? by viewModel.authMessage.collectAsState()
 //oberve viewmodel messages
@@ -42,7 +52,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Text("Login",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 16.dp))
 
         Spacer(Modifier.height(10.dp))
@@ -51,13 +61,13 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email", color = Color.Black) },
+            label = { Text("Email", color = MaterialTheme.colorScheme.onSurface) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Black,
-                unfocusedIndicatorColor = Color.Black,
+            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
 
@@ -70,18 +80,36 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             onValueChange = { password = it },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = LocalTextStyle.current.copy(color = Color.Black),
-//            colors = TextFieldDefaults.colors(
-//                focusedIndicatorColor = Color.Black,
-//                unfocusedIndicatorColor = Color.Black,
-//                focusedLabelColor = Color.Black,
-//                unfocusedLabelColor = Color.Black,
-//                cursorColor = Color.Black,
-//                focusedTextColor = Color.Black,
-//                unfocusedTextColor = Color.Black
-//            )
-
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            visualTransformation =
+                if (passwordvisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            trailingIcon = {
+                IconButton(onClick = { passwordvisible = !passwordvisible }) {
+                    Icon(
+                        imageVector =
+                            if (passwordvisible)
+                                Icons.Filled.VisibilityOff
+                            else
+                                Icons.Filled.Visibility,
+                        contentDescription = "Toggle password visibility",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         )
+
 
         Button(
             onClick = {

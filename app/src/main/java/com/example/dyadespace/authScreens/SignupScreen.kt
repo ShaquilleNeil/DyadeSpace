@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,9 +89,17 @@ fun SignupScreen(navController: NavController, viewModel: AuthViewModel){
                     viewModel.authMessage.value = "Passwords do not match"
                 }
             },
-            modifier = Modifier.width(200.dp)
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 16.dp)
+            modifier = Modifier.width(200.dp).padding(top = 16.dp).align(Alignment.CenterHorizontally),
+            shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Blue,
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 10.dp,
+                pressedElevation = 15.dp,
+                disabledElevation = 0.dp)
+
         ) {
             Text("Sign Up", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp)
 

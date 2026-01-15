@@ -23,6 +23,7 @@ import com.example.dyadespace.authScreens.SignupScreen
 import com.example.dyadespace.authScreens.TaskViewModel
 import com.example.dyadespace.manager.ManagerMainScreen
 import com.example.dyadespace.manager.ProjectEmployeesScreen
+import com.example.dyadespace.manager.ProjectTasksScreen
 import com.example.dyadespace.manager.ProjectViewContent
 import com.example.dyadespace.manager.TaskView
 
@@ -113,6 +114,16 @@ fun AppNavGraph(viewModel: AuthViewModel) {
                 val projectId = backStackEntry.arguments?.getString("projectId")
                 // Use the projectId as needed
                 ProjectEmployeesScreen(projectId = projectId!!, navController = navController, projectViewModel = projectViewModel)
+
+            }
+
+            composable("projectTasksScreen/{projectId}",
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            ){
+                backStackEntry ->
+                val projectId = backStackEntry.arguments?.getString("projectId")
+                // Use the projectId as needed
+                ProjectTasksScreen(projectId = projectId!!, navController = navController, projectViewModel = projectViewModel, taskViewModel = taskViewModel)
 
             }
 

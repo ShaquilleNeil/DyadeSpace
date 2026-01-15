@@ -1,5 +1,6 @@
 package com.example.dyadespace.viewitems
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.dyadespace.classes.Employee
@@ -70,3 +72,27 @@ fun EmployeeRow(
         )
     }
 }
+
+
+@Preview(showBackground = true, name = "Light", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(
+    showBackground = true,
+    name = "Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun EmployeeRowPreview() {
+    EmployeeRow(
+        emp = Employee(
+            EID = "E1",
+            Employee_fn = "Shaq",
+            Employee_ln = "Neil",
+            Employee_phone = "123-4567",
+            Employee_email = "shaq@example.com",
+            role = "Manager",
+            Avatar_url = null
+        ),
+        onRemove = { }
+    )
+}
+
