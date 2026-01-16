@@ -14,16 +14,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 
 
 @Composable
-fun BottomNavigation(navController: NavHostController) {
-
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Tasks,
-        BottomNavItem.Profile
-    )
-
-
-    // 🔥 observe backstack as State so it recomposes
+fun BottomNavigation(
+    navController: NavHostController,
+    items: List<BottomNavItem>
+) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 

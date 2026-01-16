@@ -50,7 +50,7 @@ fun ManagerHome(viewModel: AuthViewModel, projectViewModel: ProjectViewModel, ta
     //runs once the screen loads to fire the fetch role again
     LaunchedEffect(Unit) {
         if(!isPreview){
-            viewModel.fetchRole { }
+            viewModel.fetchRole ()
             viewModel.fetchAllEmployees()
             taskViewModel.fetchAllTasks()
             projectViewModel.fetchAllProjects()

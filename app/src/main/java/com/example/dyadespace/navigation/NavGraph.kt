@@ -15,12 +15,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.dyadespace.TestConnectionScreen
+import com.example.dyadespace.Employees.EmployeeMainScreen
 import com.example.dyadespace.authScreens.AuthViewModel
 import com.example.dyadespace.authScreens.LoginScreen
 import com.example.dyadespace.authScreens.ProjectViewModel
 import com.example.dyadespace.authScreens.SignupScreen
 import com.example.dyadespace.authScreens.TaskViewModel
+import com.example.dyadespace.classes.UserRole
 import com.example.dyadespace.manager.ManagerMainScreen
 import com.example.dyadespace.manager.ProjectEmployeesScreen
 import com.example.dyadespace.manager.ProjectTasksScreen
@@ -31,7 +32,10 @@ import com.example.dyadespace.manager.TaskView
 fun AppNavGraph(viewModel: AuthViewModel) {
 
     val navController = rememberNavController()
+
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val userRole by viewModel.userRole.collectAsState()
+
     val projectViewModel: ProjectViewModel = viewModel()
 
     val taskViewModel: TaskViewModel = viewModel(
@@ -43,9 +47,8 @@ fun AppNavGraph(viewModel: AuthViewModel) {
         }
     )
 
-
-    if (isLoggedIn == null) {
-        // You can replace this with a splash / loader later
+    // 🌀 Splash / loading state
+    if (isLoggedIn == null || (isLoggedIn == true && userRole == null)) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -55,85 +58,107 @@ fun AppNavGraph(viewModel: AuthViewModel) {
         return
     }
 
-    // 2️⃣ Decide start destination ONCE
-    val startDestination = if (isLoggedIn == true) {
-        "manager"
-    } else {
-        "login"
-    }
-
-    androidx.compose.runtime.key(isLoggedIn){
-        NavHost(
-            navController = navController,
-            startDestination = startDestination
-        ) {
-            composable("login") {
-                LoginScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+    // 🔑 ROLE-BASED ROUTING (SIDE-EFFECT, NOT startDestination)
+    LaunchedEffect(isLoggedIn, userRole) {
+        when {
+            isLoggedIn != true -> {
+                navController.navigate("login") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
 
-            composable("signup") {
-                SignupScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+            userRole == UserRole.MANAGER -> {
+                navController.navigate("manager") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
 
-
-            composable("manager") {
-                ManagerMainScreen(mainNavController = navController)
-            }
-
-            //create route to pass project id to project view
-            composable("projectView/{projectId}",
-                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
-            ){ backStackEntry ->
-                val projectId = backStackEntry.arguments?.getString("projectId")
-                // Use the projectId as needed
-                ProjectViewContent(projectId = projectId!!, navController = navController, viewModel = viewModel, projectViewModel = projectViewModel, taskViewModel = taskViewModel)
-            }
-
-
-            //create route to pass task id to task viiew
-            composable("taskView/{taskId}",
-                arguments = listOf(navArgument("taskId") { type = NavType.StringType })
-            ){
-                    backStackEntry ->
-                val taskId = backStackEntry.arguments?.getString("taskId")
-                // Use the taskId as needed
-
-                TaskView(taskId = taskId!!, navController = navController, taskViewModel = taskViewModel)
-
-            }
-
-            composable("projectEmployeesScreen/{projectId}",
-                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
-            ){ backStackEntry ->
-                val projectId = backStackEntry.arguments?.getString("projectId")
-                // Use the projectId as needed
-                ProjectEmployeesScreen(projectId = projectId!!, navController = navController, projectViewModel = projectViewModel)
-
-            }
-
-            composable("projectTasksScreen/{projectId}",
-                arguments = listOf(navArgument("projectId") { type = NavType.StringType })
-            ){
-                backStackEntry ->
-                val projectId = backStackEntry.arguments?.getString("projectId")
-                // Use the projectId as needed
-                ProjectTasksScreen(projectId = projectId!!, navController = navController, projectViewModel = projectViewModel, taskViewModel = taskViewModel)
-
-            }
-
-
-
-            composable("TestConnectionScreen") {
-                TestConnectionScreen()
+            userRole == UserRole.EMPLOYEE -> {
+                navController.navigate("employee") {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
 
+    // 🚫 startDestination is STATIC
+    NavHost(
+        navController = navController,
+        startDestination = "login"
+    ) {
 
+        composable("login") {
+            LoginScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        composable("signup") {
+            SignupScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        composable("manager") {
+            ManagerMainScreen(mainNavController = navController)
+        }
+
+        composable("employee") {
+            EmployeeMainScreen(mainNavController = navController)
+        }
+
+        // 🌍 GLOBAL ROUTES (shared)
+        composable(
+            "projectView/{projectId}",
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments!!.getString("projectId")!!
+            ProjectViewContent(
+                projectId = projectId,
+                navController = navController,
+                viewModel = viewModel,
+                projectViewModel = projectViewModel,
+                taskViewModel = taskViewModel
+            )
+        }
+
+        composable(
+            "taskView/{taskId}",
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments!!.getString("taskId")!!
+            TaskView(
+                taskId = taskId,
+                navController = navController,
+                taskViewModel = taskViewModel
+            )
+        }
+
+        composable(
+            "projectEmployeesScreen/{projectId}",
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments!!.getString("projectId")!!
+            ProjectEmployeesScreen(
+                projectId = projectId,
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+
+        composable(
+            "projectTasksScreen/{projectId}",
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments!!.getString("projectId")!!
+            ProjectTasksScreen(
+                projectId = projectId,
+                navController = navController,
+                projectViewModel = projectViewModel,
+                taskViewModel = taskViewModel
+            )
+        }
+    }
 }

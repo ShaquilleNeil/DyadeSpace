@@ -77,7 +77,7 @@ fun ManagerProfile(viewModel: AuthViewModel, mainNavController: NavController){
 
 
     LaunchedEffect(Unit) {
-        viewModel.fetchRole { }
+        viewModel.fetchRole ()
         viewModel.fetchCurrentEmployee()
     }
 

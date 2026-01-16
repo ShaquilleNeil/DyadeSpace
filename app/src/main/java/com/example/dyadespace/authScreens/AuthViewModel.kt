@@ -27,11 +27,18 @@ import kotlinx.coroutines.withContext
 import java.io.InputStream
 import kotlinx.serialization.Serializable
 import io.github.jan.supabase.auth.status.SessionStatus
+import com.example.dyadespace.classes.UserRole
+
 
 
 
 
 class AuthViewModel: ViewModel() {
+
+    @Serializable
+    data class RoleResult(
+        val role: String
+    )
 
 
 
@@ -42,6 +49,8 @@ class AuthViewModel: ViewModel() {
      private val _employees = MutableStateFlow<List<Employee>>(emptyList())
     val employees: StateFlow<List<Employee>> = _employees.asStateFlow()
 
+    private val _userRole = MutableStateFlow<UserRole?>(null)
+    val userRole: StateFlow<UserRole?> = _userRole.asStateFlow()
 
 
 
@@ -56,14 +65,35 @@ class AuthViewModel: ViewModel() {
 //
 init {
     viewModelScope.launch {
+//        SupabaseClient.client.auth.sessionStatus.collect { status ->
+//            _isLoggedIn.value = when (status) {
+//                is SessionStatus.Authenticated -> true
+//                is SessionStatus.NotAuthenticated -> false
+//                is SessionStatus.RefreshFailure -> false
+//                is SessionStatus.Initializing -> null
+//            }
+//        }
         SupabaseClient.client.auth.sessionStatus.collect { status ->
-            _isLoggedIn.value = when (status) {
-                is SessionStatus.Authenticated -> true
-                is SessionStatus.NotAuthenticated -> false
-                is SessionStatus.RefreshFailure -> false
-                is SessionStatus.Initializing -> null
+            when (status) {
+                is SessionStatus.Authenticated -> {
+                    _isLoggedIn.value = true
+                    fetchRole() // 🔑 load role ONCE
+                }
+                is SessionStatus.NotAuthenticated -> {
+                    _isLoggedIn.value = false
+                    _userRole.value = null
+                }
+                is SessionStatus.RefreshFailure -> {
+                    _isLoggedIn.value = false
+                    _userRole.value = null
+                }
+                is SessionStatus.Initializing -> {
+                    _isLoggedIn.value = null
+                    _userRole.value = null
+                }
             }
         }
+
     }
 }
 
@@ -91,7 +121,8 @@ init {
                 phone: String,
                 role: String = "employee",
                 email: String,
-                password: String) {
+                password: String)
+    {
         viewModelScope.launch { //starts a coroutine inside the viewmodel -
             // We use viewModelScope.launch because Supabase functions are suspend calls,
             // and running them in a coroutine keeps the UI thread free so the app stays smooth.
@@ -303,20 +334,35 @@ init {
 
 
     //we need something to wait for the response because it is not immediate : onResult (a callback function)
-    fun fetchRole(onResult: (UserRole?) -> Unit) {
-        viewModelScope.launch{
+    fun fetchRole() {
+        viewModelScope.launch {
             try {
-                val role = SupabaseClient.client
+                val result = SupabaseClient.client
                     .postgrest
                     .rpc("get_my_role")
-                    .decodeSingle<String>()
+                    .decodeSingle<RoleResult>()
 
-                onResult(UserRole(role = role))
-            }catch (e: Exception){
-                onResult(null)
+                println("AUTH DEBUG → raw role = ${result.role}")
+
+                _userRole.value = when (result.role.lowercase()) {
+                    "manager" -> UserRole.MANAGER
+                    "employee" -> UserRole.EMPLOYEE
+                    else -> null
+                }
+
+                println("AUTH DEBUG → mapped role = ${_userRole.value}")
+
+            } catch (e: Exception) {
+                println("ROLE FETCH ERROR → ${e.message}")
+                // 🚫 DO NOT set EMPLOYEE here
+                // leave role as null so navigation waits
             }
         }
     }
+
+
+
+
 
     fun setFakeEmployee(emp: Employee) {
         _currentEmployee.value = emp

@@ -1,4 +1,4 @@
-package com.example.dyadespace.manager
+package com.example.dyadespace.Employees
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -8,23 +8,25 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.dyadespace.classes.BottomNavItem
 import com.example.dyadespace.classes.BottomNavigation
+import com.example.dyadespace.manager.ManagerNavhost
 
 @Composable
-fun ManagerMainScreen(mainNavController: NavHostController) {
+fun EmployeeMainScreen(mainNavController: NavHostController) {
 
-    val managerNavController = rememberNavController() //gets it's own nav controller
-    println("🧑‍🔧 Manager MAIN SCREEN")
+    val employeeNavController = rememberNavController() //gets it's own nav controller
+
+    println("🧑‍🔧 EMPLOYEE MAIN SCREEN")
 
     Scaffold(
         bottomBar = {
-            BottomNavigation(navController = managerNavController, items = BottomNavItem.ManagerBottomNavItems)
-
+            BottomNavigation(navController = employeeNavController, items = BottomNavItem.EmployeeBottomNavItems)
         }
     ) { innerPadding ->
-        ManagerNavhost(
-            navController = managerNavController,
+        EmployeeNavhost(
+            navController = employeeNavController,
             mainNavController = mainNavController, //pass this to enable logout to come back from second nav host
             modifier = Modifier.padding(innerPadding)
         )
     }
+
 }

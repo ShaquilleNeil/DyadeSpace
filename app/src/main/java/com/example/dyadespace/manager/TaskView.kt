@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -68,11 +69,21 @@ fun TaskView(
         )
         {
 
+
+
             Text(tsk?.title ?: "",
                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(top = 10.dp).padding(bottom = 10.dp)
             )
 
+            TextButton(
+                onClick = {
+                    navController.navigate("projectView/${tsk?.project_id}")
+                },
+                modifier = Modifier.padding()
+            ) {
+                Text("Back")
+            }
             val statusColor = when (tsk?.status) {
                 "in-progress" -> Color.Green
                 "done" -> Color.Blue

@@ -45,7 +45,7 @@ import com.example.dyadespace.ui.preview.previewData
 @Composable
 fun ManagerTasks(viewModel: AuthViewModel, navController: NavController, taskViewModel: TaskViewModel){
     LaunchedEffect(Unit) {
-        viewModel.fetchRole {}
+        viewModel.fetchRole ()
         taskViewModel.fetchMyTasks()
     }
 
