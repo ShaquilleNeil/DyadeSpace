@@ -24,7 +24,7 @@
 - [x] Supabase connection test
 - [x] Email/Password Authentication (in progress)
 - [x] profile logout
-- [ ] Employee/Task database integration
-- [ ] Manager dashboard
-- [ ] Real-time updates
+- [x] Employee/Task database integration
+- [x] Manager dashboard
+- [x] Real-time updates
 - [ ] UI polishing
