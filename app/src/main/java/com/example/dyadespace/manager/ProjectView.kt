@@ -654,7 +654,12 @@ fun ProjectViewContent(
 
 
     if (project == null) {
-        Text("Loading project…")
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Loading project…")
+        }
     } else {
         ProjectViewUi(
             project = project!!,
@@ -673,6 +678,7 @@ fun ProjectViewContent(
             }
         )
     }
+
 }
 
 /* ---------------------------------------------------
