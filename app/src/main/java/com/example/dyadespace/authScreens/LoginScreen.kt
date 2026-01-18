@@ -35,13 +35,17 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
     val message: String? by viewModel.authMessage.collectAsState()
 //oberve viewmodel messages
 
-
+Surface(
+    modifier = Modifier.fillMaxSize(),
+    color = MaterialTheme.colorScheme.background
+) {
 
     Column(
         modifier = Modifier.fillMaxSize().padding(15.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    )
+    {
 
         Image(
             painter = painterResource(id = R.drawable.dyadespace),
@@ -155,6 +159,9 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         }
 
     }
+}
+
+
 
 
 }

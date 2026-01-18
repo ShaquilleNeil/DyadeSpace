@@ -148,6 +148,7 @@ init {
                     )
                 )
 
+                SupabaseClient.client.auth.signOut()
 
                 _authMessage.value = "Sign up successful"
             } catch (e: Exception) {
