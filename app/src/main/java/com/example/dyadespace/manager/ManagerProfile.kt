@@ -81,7 +81,8 @@ fun ManagerProfile(
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
-    ) {
+    )
+    {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,7 +90,8 @@ fun ManagerProfile(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
+        )
+        {
 
             // Avatar
             if (imageUri == null) {

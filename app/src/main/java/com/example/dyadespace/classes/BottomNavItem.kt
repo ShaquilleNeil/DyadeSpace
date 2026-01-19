@@ -14,6 +14,9 @@ sealed class BottomNavItem(
     //we are creating the nav items here and also the destinations and order
     object Home: BottomNavItem("ManagerHome","Home", R.drawable.baseline_home_24)
 
+    object Staff: BottomNavItem("ManagerStaff","Staff", R.drawable.baseline_group_people_24)
+
+
     object Tasks: BottomNavItem("ManagerTasks","My Tasks", R.drawable.baseline_task_24)
 
     object Profile: BottomNavItem("ManagerProfile","Profile", R.drawable.baseline_person_24)
@@ -24,6 +27,7 @@ sealed class BottomNavItem(
     companion object {
         val ManagerBottomNavItems = listOf(
             Home,
+            Staff,
             Tasks,
             Profile
         )

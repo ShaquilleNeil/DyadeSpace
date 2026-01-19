@@ -33,7 +33,7 @@ fun EmployeeNavhost(navController: NavHostController, mainNavController: NavHost
         startDestination = BottomNavItem.EmployeeHome.route,
         modifier = modifier
     ) {
-        composable(BottomNavItem.EmployeeHome.route) { EmployeeHome(viewModel, projectViewModel, taskViewModel, mainNavController) }
+        composable(BottomNavItem.EmployeeHome.route) { EmployeeHome(viewModel, taskViewModel, mainNavController) }
         composable(BottomNavItem.EmployeeProfile.route) { EmployeeProfile(viewModel, mainNavController) } //navcontroller is innner nav and mainnavcontroller is global
 
     }
