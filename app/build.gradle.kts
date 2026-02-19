@@ -10,6 +10,11 @@ android {
     namespace = "com.example.dyadespace"
     compileSdk = 36
 
+    packaging {
+        resources {
+            pickFirsts += "assets/PublicSuffixDatabase.list"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.example.dyadespace"
@@ -21,8 +26,8 @@ android {
         val supabaseUrl: String = project.properties["SUPABASE_URL"]?.toString() ?: ""
         val supabaseKey: String = project.properties["SUPABASE_ANON_KEY"]?.toString() ?: ""
 
-        buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL")}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseKey\"")
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -60,6 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

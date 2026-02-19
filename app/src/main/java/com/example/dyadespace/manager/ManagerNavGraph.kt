@@ -31,7 +31,7 @@ fun ManagerNavhost(navController: NavHostController, mainNavController: NavHostC
         modifier = modifier
     ) {
         composable(BottomNavItem.Home.route) { ManagerHome(viewModel, projectViewModel, taskViewModel, mainNavController) }
-        composable(BottomNavItem.Staff.route) { ManagerStaff() }
+        composable(BottomNavItem.Staff.route) { ManagerStaff(authViewModel = viewModel, taskViewModel = taskViewModel, navController = mainNavController) }
         composable(BottomNavItem.Profile.route) { ManagerProfile(viewModel, mainNavController) } //navcontroller is innner nav and mainnavcontroller is global
         composable(BottomNavItem.Tasks.route) { ManagerTasks(viewModel, mainNavController, taskViewModel) }
     }

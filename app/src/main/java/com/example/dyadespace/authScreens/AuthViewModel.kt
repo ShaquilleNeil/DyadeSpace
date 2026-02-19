@@ -41,7 +41,10 @@ class AuthViewModel: ViewModel() {
     )
 
 
-
+    val taskViewModel: TaskViewModel
+        get() {
+            TODO()
+        }
     private val _authMessage = MutableStateFlow<String?>(null) //mutable state flow, a value that can change over time
     val authMessage = _authMessage //the underscore means only a viewmodel can change this variable(it's liek a toast)
     private val _currentEmployee = MutableStateFlow<Employee?>(null)

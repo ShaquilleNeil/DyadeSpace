@@ -265,5 +265,41 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
         println("RAW RESPONSE: $response")
     }
 
+    suspend fun getActiveTaskCountForEmployee(employeeId: String): Int {
+        return try {
+
+            // 1️⃣ Get assigned task links
+            val assigned = SupabaseClient.client.postgrest["employee_tasks"]
+                .select(columns = Columns.list("id")) {
+                    filter { eq("EID", employeeId) }
+                }
+                .decodeList<EmployeeTask>()
+
+            val taskIds = assigned.map { it.id }
+
+            if (taskIds.isEmpty()) return 0
+
+            // 2️⃣ Fetch tasks that are NOT completed
+            val tasks = SupabaseClient.client.postgrest["tasks"]
+                .select(columns = Columns.list("id")) {
+                    filter {
+                        or {
+                            taskIds.forEach { id ->
+                                eq("id", id)
+                            }
+                        }
+                        neq("status", "done")
+                    }
+                }
+                .decodeList<Map<String, String>>() // lightweight
+
+            tasks.size
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0
+        }
+    }
+
 
 }
