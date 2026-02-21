@@ -7,24 +7,35 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Status](https://img.shields.io/badge/Status-In_Development-orange)
 
+DyadeSpace is a collaborative employee and task management platform designed for managers to coordinate teams, track progress, and monitor activity across projects in real time.
 
+---
 
+## 🎥 Demo Video
+A walkthrough of the current application experience is available below:
+
+👉 **[Watch Demo Video](VIDEO_LINK_HERE)**
+
+---
 
 ### Tech Stack
 - Android (Kotlin + Jetpack Compose)
 - Supabase (Auth, Database, Realtime)
 - MVVM Architecture
 
+---
 
-##Project status
-⏳ In development — Authentication module in progress
+## Project Status
+🚧 Active development — Core features implemented, final screens and UI polishing remaining
 
+---
 
 ### Roadmap
 - [x] Supabase connection test
-- [x] Email/Password Authentication (in progress)
-- [x] profile logout
+- [x] Email/Password Authentication
+- [x] Session persistence & logout
 - [x] Employee/Task database integration
 - [x] Manager dashboard
 - [x] Real-time updates
+- [ ] Remaining feature screens
 - [ ] UI polishing
