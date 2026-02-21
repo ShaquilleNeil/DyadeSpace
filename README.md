@@ -14,7 +14,7 @@ DyadeSpace is a collaborative employee and task management platform designed for
 ## 🎥 Demo Video
 A walkthrough of the current application experience is available below:
 
-👉 ![Demo Preview](./assets/demo.mov)
+👉 
 
 ---
 
