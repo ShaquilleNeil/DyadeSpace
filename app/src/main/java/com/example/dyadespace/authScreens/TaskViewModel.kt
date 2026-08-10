@@ -127,7 +127,7 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
     }
 
 
-    fun addTaskAndAssign(task: Tasks, employeeId: String?) {
+    fun addTaskAndAssign(task: Tasks, employeeIds: List<String>) {
         viewModelScope.launch {
             try {
                 // 1️⃣ Insert task and get generated ID
@@ -140,8 +140,8 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
 
                 val taskId = insertedTask.id ?: return@launch
 
-                // 2️⃣ Assign employee if selected
-                if (!employeeId.isNullOrBlank()) {
+                // 2️⃣ Assign employees if selected
+                employeeIds.filter { it.isNotBlank() }.forEach { employeeId ->
                     SupabaseClient.client.postgrest["employee_tasks"]
                         .insert(
                             mapOf(
@@ -151,13 +151,18 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
                         )
                 }
 
-                SupabaseClient.client.postgrest["project_tasks"]
-                    .insert(
-                        ProjectTaskInsert(
-                            project_id = insertedTask.project_id!!,
-                            task_id = insertedTask.id!!
+                if (insertedTask.project_id != null) {
+
+                    SupabaseClient.client.postgrest["project_tasks"]
+                        .insert(
+                            ProjectTaskInsert(
+                                project_id = insertedTask.project_id,
+                                task_id = insertedTask.id!!
+                            )
                         )
-                    )
+
+                    ProjectViewModel.fetchProjectTasks(insertedTask.project_id)
+                }
 
 
                 // 3️⃣ Refresh UI
@@ -268,31 +273,29 @@ class TaskViewModel(private val ProjectViewModel: ProjectViewModel) : ViewModel(
     suspend fun getActiveTaskCountForEmployee(employeeId: String): Int {
         return try {
 
-            // 1️⃣ Get assigned task links
             val assigned = SupabaseClient.client.postgrest["employee_tasks"]
                 .select(columns = Columns.list("id")) {
                     filter { eq("EID", employeeId) }
                 }
-                .decodeList<EmployeeTask>()
+                .decodeList<Map<String, String>>()
 
-            val taskIds = assigned.map { it.id }
+            val taskIds = assigned.map { it["id"]!! }
 
             if (taskIds.isEmpty()) return 0
 
-            // 2️⃣ Fetch tasks that are NOT completed
             val tasks = SupabaseClient.client.postgrest["tasks"]
                 .select(columns = Columns.list("id")) {
                     filter {
-                        or {
-                            taskIds.forEach { id ->
-                                eq("id", id)
-                            }
-                        }
+                        isIn("id", taskIds)
                         neq("status", "done")
                     }
                 }
-                .decodeList<Map<String, String>>() // lightweight
+                .decodeList<Map<String, String>>()
 
+            println("EMPLOYEE: $employeeId")
+            println("ASSIGNED: $assigned")
+            println("TASK IDS: $taskIds")
+            println("TASK COUNT RESULT: ${tasks.size}")
             tasks.size
 
         } catch (e: Exception) {

@@ -1,5 +1,6 @@
 package com.example.dyadespace.viewitems
 
+import android.R
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,9 +25,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,23 +53,30 @@ import com.example.dyadespace.ui.theme.DyadeSpaceTheme
 
 
 @Composable
-fun EmployeeCard(emp: Employee, taskCount: Int) {
+fun EmployeeCard(emp: Employee, taskCount: Int, onAddClick: (Employee) -> Unit) {
+
+
+
+
 
     Card(
         modifier = Modifier
             .width(170.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
             .height(230.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2B2B2B)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
+
     ) {
 
         Box(modifier = Modifier.fillMaxSize()) {
 
             // 🔵 Floating + button
             FilledIconButton(
-                onClick = {},
+                onClick = {onAddClick(emp)},
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(10.dp)
@@ -112,13 +126,13 @@ fun EmployeeCard(emp: Employee, taskCount: Int) {
                     emp.Employee_fn,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
                     emp.role ?: "Unknown",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
 
@@ -142,10 +156,17 @@ fun EmployeeCard(emp: Employee, taskCount: Int) {
                 Text(
                     "${taskCount} tasks active",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.LightGray
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+
+
+
+
             }
         }
+
+
+
     }
 }
 
@@ -174,7 +195,8 @@ fun EmployeeCardsPreview() {
                     Avatar_url = "https://picsum.photos/200",
 
                     ),
-                taskCount = 12
+                taskCount = 12,
+                onAddClick = {}
             )
         }
     }

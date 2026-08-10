@@ -87,7 +87,7 @@ import com.example.dyadespace.viewitems.TaskItem
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Tasks>, allEmployees: List<Employee>, onAddEmployee: (String, String) -> Unit,
-                  onAddTask: (Tasks, String?) -> Unit,
+                  onAddTask: (Tasks, List<String>) -> Unit,
                   onViewAllEmployees: (String) -> Unit, navcontroller: NavController) {
 
     var employeesExpanded by remember { mutableStateOf(false) }
@@ -173,7 +173,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                     Text(
                         text = project.name ?: "Unnamed Project",
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                 }
@@ -194,7 +194,7 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                 Text(
                     text = project.address ?: "",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.85f)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
@@ -597,9 +597,10 @@ fun ProjectViewUi(project: Projects, employees: List<Employee>, tasks: List<Task
                             TaskForm(
                                 projectId = project.id!!,
                                 allEmployees = allEmployees,
+                                selectedEmployee = null, // ✅ ADD THIS
                                 onDismiss = { showtaskform = false },
-                                onSave = { task, employeeId ->
-                                    onAddTask(task, employeeId)
+                                onSave = { task, employeeIds ->
+                                    onAddTask(task, employeeIds)
                                     showtaskform = false
                                 }
                             )
@@ -673,8 +674,8 @@ fun ProjectViewContent(
             onAddEmployee = { projectId, employeeId ->
                 projectViewModel.addEmployeeToProject(projectId, employeeId)
             },
-            onAddTask = { task, employeeId ->
-                taskViewModel.addTaskAndAssign(task, employeeId)
+            onAddTask = { task, employeeIds ->
+                taskViewModel.addTaskAndAssign(task, employeeIds)
             }
         )
     }

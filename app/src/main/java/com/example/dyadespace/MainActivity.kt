@@ -15,6 +15,8 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+
+
         setContent {
             val viewModel: AuthViewModel =
                 androidx.lifecycle.viewmodel.compose.viewModel()
