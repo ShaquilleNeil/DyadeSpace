@@ -1,14 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class EmployeeRole {
+  static const admin = 'admin';
+  static const manager = 'manager';
+  static const employee = 'employee';
+
+  static const all = [admin, manager, employee];
+
+  static String label(String role) {
+    switch (role) {
+      case admin:
+        return 'Admin';
+      case manager:
+        return 'Manager';
+      case employee:
+        return 'Worker';
+      default:
+        return role;
+    }
+  }
+}
+
 class Employee {
   final String id; // Firebase Auth uid, also the employees/{id} doc id
   final String firstName;
   final String? lastName;
   final String? phone;
   final String? email;
-  final String role; // "manager" | "employee"
+  final String role; // "admin" | "manager" | "employee"
   final String? avatarUrl;
   final DateTime? createdAt;
+  // Denormalized mirror of every project's `memberIds` this employee is on —
+  // lets manager-scoping queries/rules filter without scanning all projects.
+  final List<String> projectIds;
+  final List<String> fcmTokens;
 
   const Employee({
     required this.id,
@@ -19,9 +44,12 @@ class Employee {
     required this.role,
     this.avatarUrl,
     this.createdAt,
+    this.projectIds = const [],
+    this.fcmTokens = const [],
   });
 
-  bool get isManager => role == 'manager';
+  bool get isAdmin => role == EmployeeRole.admin;
+  bool get isManager => role == EmployeeRole.manager;
 
   String get fullName =>
       [firstName, lastName].where((s) => s != null && s.isNotEmpty).join(' ');
@@ -34,9 +62,11 @@ class Employee {
       lastName: data['lastName'] as String?,
       phone: data['phone'] as String?,
       email: data['email'] as String?,
-      role: data['role'] as String? ?? 'employee',
+      role: data['role'] as String? ?? EmployeeRole.employee,
       avatarUrl: data['avatarUrl'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      projectIds: List<String>.from(data['projectIds'] as List? ?? const []),
+      fcmTokens: List<String>.from(data['fcmTokens'] as List? ?? const []),
     );
   }
 
@@ -51,6 +81,8 @@ class Employee {
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
+      'projectIds': projectIds,
+      'fcmTokens': fcmTokens,
     };
   }
 
@@ -61,6 +93,7 @@ class Employee {
     String? email,
     String? role,
     String? avatarUrl,
+    List<String>? projectIds,
   }) {
     return Employee(
       id: id,
@@ -71,6 +104,8 @@ class Employee {
       role: role ?? this.role,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt,
+      projectIds: projectIds ?? this.projectIds,
+      fcmTokens: fcmTokens,
     );
   }
 }

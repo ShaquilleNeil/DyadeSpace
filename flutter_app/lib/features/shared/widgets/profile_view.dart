@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +47,11 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
   }
 
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 70,
+    );
     if (picked != null) {
       setState(() => _pickedImage = File(picked.path));
     }
@@ -76,7 +81,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
                   : CircleAvatar(
                       radius: 60,
                       backgroundImage: (employee.avatarUrl?.isNotEmpty ?? false)
-                          ? NetworkImage(employee.avatarUrl!)
+                          ? CachedNetworkImageProvider(employee.avatarUrl!)
                           : null,
                       child:
                           (employee.avatarUrl?.isNotEmpty ?? false) ? null : const Icon(Icons.person, size: 60),

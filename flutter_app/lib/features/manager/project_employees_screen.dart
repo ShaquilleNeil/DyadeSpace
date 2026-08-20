@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/auth_providers.dart';
 import '../../providers/projects_providers.dart';
+import '../../utils/confirm.dart';
 import '../shared/widgets/employee_row.dart';
 import '../shared/widgets/search_field.dart';
 
@@ -21,6 +23,7 @@ class _ProjectEmployeesScreenState extends ConsumerState<ProjectEmployeesScreen>
   Widget build(BuildContext context) {
     final projectAsync = ref.watch(projectByIdProvider(widget.projectId));
     final employeesAsync = ref.watch(projectEmployeesProvider(widget.projectId));
+    final isAdmin = ref.watch(currentEmployeeProvider).value?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text(projectAsync.value?.name ?? 'Loading project…')),
@@ -51,9 +54,21 @@ class _ProjectEmployeesScreenState extends ConsumerState<ProjectEmployeesScreen>
                       final emp = displayed[index];
                       return EmployeeRow(
                         employee: emp,
-                        onRemove: () => ref
-                            .read(projectControllerProvider)
-                            .removeEmployeeFromProject(widget.projectId, emp.id),
+                        onRemove: !isAdmin
+                            ? null
+                            : () async {
+                                final confirmed = await confirmDialog(
+                                  context,
+                                  title: 'Remove employee?',
+                                  message: 'Remove ${emp.fullName} from this project?',
+                                  confirmLabel: 'Remove',
+                                );
+                                if (confirmed) {
+                                  ref
+                                      .read(projectControllerProvider)
+                                      .removeEmployeeFromProject(widget.projectId, emp.id);
+                                }
+                              },
                       );
                     },
                   ),

@@ -16,6 +16,7 @@ class EmployeeShell extends StatelessWidget {
             navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.assignment), label: 'Reports'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

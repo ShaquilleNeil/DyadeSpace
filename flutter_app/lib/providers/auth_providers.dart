@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/employee.dart';
+import '../utils/friendly_error.dart';
 import 'firebase_providers.dart';
 
 /// Raw Firebase auth state — mirrors Supabase's `SessionStatus` stream.
@@ -45,7 +46,6 @@ class AuthController {
     required String firstName,
     required String lastName,
     required String phone,
-    String role = 'employee',
     required String email,
     required String password,
   }) async {
@@ -53,6 +53,9 @@ class AuthController {
       final user =
           await _ref.read(authServiceProvider).signUp(email: email, password: password);
 
+      // Self-signup always creates a plain worker with no project — role
+      // elevation and project assignment only ever happen through an admin's
+      // staff-edit sheet (also enforced server-side by firestore.rules).
       await _ref.read(firestoreServiceProvider).createEmployee(
             Employee(
               id: user.uid,
@@ -60,14 +63,16 @@ class AuthController {
               lastName: lastName,
               phone: phone,
               email: email,
-              role: role,
+              role: EmployeeRole.employee,
             ),
           );
 
       await _ref.read(authServiceProvider).signOut();
       _ref.read(authMessageProvider.notifier).set('Sign up successful');
     } catch (e) {
-      _ref.read(authMessageProvider.notifier).set(e.toString());
+      _ref.read(authMessageProvider.notifier).set(
+            friendlyErrorMessage(e, fallback: 'Could not create account. Please try again.'),
+          );
     }
   }
 
@@ -75,7 +80,9 @@ class AuthController {
     try {
       await _ref.read(authServiceProvider).logIn(email: email, password: password);
     } catch (e) {
-      _ref.read(authMessageProvider.notifier).set('Authentication failed');
+      _ref.read(authMessageProvider.notifier).set(
+            friendlyErrorMessage(e, fallback: 'Could not log in. Please try again.'),
+          );
     }
   }
 
@@ -84,7 +91,9 @@ class AuthController {
       await _ref.read(authServiceProvider).signOut();
       _ref.read(authMessageProvider.notifier).set('Sign out successful');
     } catch (e) {
-      _ref.read(authMessageProvider.notifier).set(e.toString());
+      _ref.read(authMessageProvider.notifier).set(
+            friendlyErrorMessage(e, fallback: 'Could not sign out. Please try again.'),
+          );
     }
   }
 
@@ -109,7 +118,20 @@ class AuthController {
 
       _ref.read(authMessageProvider.notifier).set('Profile Updated');
     } catch (e) {
-      _ref.read(authMessageProvider.notifier).set(e.toString());
+      _ref.read(authMessageProvider.notifier).set(
+            friendlyErrorMessage(e, fallback: 'Could not update profile. Please try again.'),
+          );
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _ref.read(authServiceProvider).sendPasswordResetEmail(email);
+      _ref.read(authMessageProvider.notifier).set('Password reset email sent to $email');
+    } catch (e) {
+      _ref.read(authMessageProvider.notifier).set(
+            friendlyErrorMessage(e, fallback: 'Could not send reset email. Please try again.'),
+          );
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
+import 'providers/notifications_providers.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -18,6 +19,7 @@ class DyadeSpaceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
+    ref.watch(fcmSyncProvider);
 
     return MaterialApp.router(
       title: 'DyadeSpace',

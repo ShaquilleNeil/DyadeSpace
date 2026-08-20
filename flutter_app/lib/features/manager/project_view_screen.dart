@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/employee.dart';
 import '../../models/task.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/employees_providers.dart';
 import '../../providers/projects_providers.dart';
 import '../../providers/tasks_providers.dart';
@@ -112,7 +114,8 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
     final projectAsync = ref.watch(projectByIdProvider(widget.projectId));
     final employeesAsync = ref.watch(projectEmployeesProvider(widget.projectId));
     final tasksAsync = ref.watch(projectTasksProvider(widget.projectId));
-    final allEmployeesAsync = ref.watch(allEmployeesProvider);
+    final allEmployeesAsync = ref.watch(visibleEmployeesProvider);
+    final isAdmin = ref.watch(currentEmployeeProvider).value?.isAdmin ?? false;
 
     return Scaffold(
       body: projectAsync.when(
@@ -137,7 +140,16 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
                     fit: StackFit.expand,
                     children: [
                       if (project.photoUrl?.isNotEmpty ?? false)
-                        Image.network(project.photoUrl!, fit: BoxFit.cover)
+                        CachedNetworkImage(
+                          imageUrl: project.photoUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) =>
+                              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                        )
                       else
                         Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                       DecoratedBox(
@@ -269,12 +281,14 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (_fabExpanded) ...[
-                  FloatingActionButton(
-                    heroTag: 'addEmployee',
-                    onPressed: () => _openAddEmployeeSheet(allEmployeesAsync.value ?? const []),
-                    child: const Icon(Icons.person_add),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  if (isAdmin) ...[
+                    FloatingActionButton(
+                      heroTag: 'addEmployee',
+                      onPressed: () => _openAddEmployeeSheet(allEmployeesAsync.value ?? const []),
+                      child: const Icon(Icons.person_add),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   FloatingActionButton(
                     heroTag: 'addTask',
                     onPressed: () => _openAddTaskSheet(allEmployeesAsync.value ?? const []),

@@ -31,6 +31,8 @@ class Task {
   final DateTime? createdAt;
   final String? projectId;
   final List<String> assigneeIds;
+  final List<String> completionPhotoUrls;
+  final String? completionNote;
 
   const Task({
     required this.id,
@@ -41,6 +43,8 @@ class Task {
     this.createdAt,
     this.projectId,
     this.assigneeIds = const [],
+    this.completionPhotoUrls = const [],
+    this.completionNote,
   });
 
   bool get isDone => status == TaskStatus.done;
@@ -56,6 +60,8 @@ class Task {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       projectId: data['projectId'] as String?,
       assigneeIds: List<String>.from(data['assigneeIds'] as List? ?? const []),
+      completionPhotoUrls: List<String>.from(data['completionPhotoUrls'] as List? ?? const []),
+      completionNote: data['completionNote'] as String?,
     );
   }
 
@@ -70,6 +76,8 @@ class Task {
           : FieldValue.serverTimestamp(),
       'projectId': projectId,
       'assigneeIds': assigneeIds,
+      'completionPhotoUrls': completionPhotoUrls,
+      'completionNote': completionNote,
     };
   }
 }

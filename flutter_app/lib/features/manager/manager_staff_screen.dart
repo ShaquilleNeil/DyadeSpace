@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/employee.dart';
 import '../../providers/employees_providers.dart';
@@ -38,7 +39,7 @@ class _ManagerStaffScreenState extends ConsumerState<ManagerStaffScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final employeesAsync = ref.watch(allEmployeesProvider);
+    final employeesAsync = ref.watch(visibleEmployeesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Staff Directory'), automaticallyImplyLeading: false),
@@ -80,6 +81,7 @@ class _ManagerStaffScreenState extends ConsumerState<ManagerStaffScreen> {
                         employee: emp,
                         taskCount: countAsync.value ?? 0,
                         onAddTask: () => _openTaskForm(context, emp, employees),
+                        onTap: () => context.push('/staff/${emp.id}'),
                       );
                     },
                   );

@@ -34,7 +34,11 @@ class _ProjectFormState extends State<ProjectForm> {
   }
 
   Future<void> _pickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 70,
+    );
     if (picked != null) {
       setState(() => _photo = File(picked.path));
     }

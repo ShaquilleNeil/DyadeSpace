@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../models/employee.dart';
 import '../../../models/task.dart';
 import '../../../theme/app_spacing.dart';
+import 'employee_multi_picker.dart';
 import 'form_sheet_scaffold.dart';
 
 class _TaskEntry {
@@ -106,54 +107,6 @@ class _TaskFormState extends State<TaskForm> {
     }
   }
 
-  Widget _buildEmployeePicker(_TaskEntry entry) {
-    TextEditingController? fieldController;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (entry.pickedEmployees.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: entry.pickedEmployees.map((emp) {
-                return InputChip(
-                  label: Text(emp.fullName),
-                  onDeleted: () => setState(() => entry.pickedEmployees.remove(emp)),
-                );
-              }).toList(),
-            ),
-          ),
-        Autocomplete<Employee>(
-          optionsBuilder: (textEditingValue) {
-            final query = textEditingValue.text.toLowerCase();
-            return widget.allEmployees.where((emp) =>
-                !entry.pickedEmployees.contains(emp) &&
-                emp.fullName.toLowerCase().contains(query));
-          },
-          displayStringForOption: (emp) => emp.fullName,
-          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            fieldController = controller;
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              decoration: const InputDecoration(
-                labelText: 'Add employee',
-                prefixIcon: Icon(Icons.search),
-              ),
-            );
-          },
-          onSelected: (emp) {
-            setState(() => entry.pickedEmployees.add(emp));
-            fieldController?.clear();
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildEntryFields(_TaskEntry entry, int index) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -190,7 +143,12 @@ class _TaskFormState extends State<TaskForm> {
           else ...[
             Text('Assign Employees', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpacing.sm),
-            _buildEmployeePicker(entry),
+            EmployeeMultiPicker(
+              allEmployees: widget.allEmployees,
+              selectedEmployees: entry.pickedEmployees,
+              onAdd: (emp) => setState(() => entry.pickedEmployees.add(emp)),
+              onRemove: (emp) => setState(() => entry.pickedEmployees.remove(emp)),
+            ),
           ],
         ],
       ),

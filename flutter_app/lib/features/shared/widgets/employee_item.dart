@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/employee.dart';
@@ -18,8 +19,9 @@ class EmployeeItem extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundImage:
-                (employee.avatarUrl?.isNotEmpty ?? false) ? NetworkImage(employee.avatarUrl!) : null,
+            backgroundImage: (employee.avatarUrl?.isNotEmpty ?? false)
+                ? CachedNetworkImageProvider(employee.avatarUrl!)
+                : null,
             child: (employee.avatarUrl?.isNotEmpty ?? false) ? null : const Icon(Icons.person),
           ),
           const SizedBox(height: 6),

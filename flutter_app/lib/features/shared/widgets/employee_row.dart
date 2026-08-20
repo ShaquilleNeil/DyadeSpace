@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/employee.dart';
@@ -5,10 +6,10 @@ import '../../../models/employee.dart';
 /// Full-width row with avatar, name/role, and a remove action — used on the
 /// project employees list screen.
 class EmployeeRow extends StatelessWidget {
-  const EmployeeRow({super.key, required this.employee, required this.onRemove});
+  const EmployeeRow({super.key, required this.employee, this.onRemove});
 
   final Employee employee;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +19,9 @@ class EmployeeRow extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundImage:
-                (employee.avatarUrl?.isNotEmpty ?? false) ? NetworkImage(employee.avatarUrl!) : null,
+            backgroundImage: (employee.avatarUrl?.isNotEmpty ?? false)
+                ? CachedNetworkImageProvider(employee.avatarUrl!)
+                : null,
             child: (employee.avatarUrl?.isNotEmpty ?? false) ? null : const Icon(Icons.person),
           ),
           const SizedBox(width: 16),
@@ -38,10 +40,11 @@ class EmployeeRow extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(
-            onPressed: onRemove,
-            child: Text('Remove', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
+          if (onRemove != null)
+            TextButton(
+              onPressed: onRemove,
+              child: Text('Remove', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
         ],
       ),
     );

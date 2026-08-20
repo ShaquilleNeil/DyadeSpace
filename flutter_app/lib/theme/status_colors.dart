@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/material_request.dart';
 import '../models/task.dart';
 
 /// Single source of truth for "status" colors across the app. Previously each
@@ -28,6 +29,34 @@ StatusPalette taskStatusPalette(BuildContext context, String status) {
       return isDark
           ? const StatusPalette(background: Color(0xFF123A22), foreground: Color(0xFF6EE7A8))
           : const StatusPalette(background: Color(0xFFD9F7E3), foreground: Color(0xFF15803D));
+    default:
+      return isDark
+          ? const StatusPalette(background: Color(0xFF3A3D42), foreground: Color(0xFFD0D3D9))
+          : const StatusPalette(background: Color(0xFFE6E8EB), foreground: Color(0xFF4A4E57));
+  }
+}
+
+/// Same background/foreground scheme as [taskStatusPalette], reused for
+/// material request status chips (pending/approved/rejected/fulfilled).
+StatusPalette materialRequestStatusPalette(BuildContext context, String status) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  switch (status) {
+    case MaterialRequestStatus.pending:
+      return isDark
+          ? const StatusPalette(background: Color(0xFF4A3B12), foreground: Color(0xFFFFD873))
+          : const StatusPalette(background: Color(0xFFFFF3CD), foreground: Color(0xFF8A6100));
+    case MaterialRequestStatus.approved:
+      return isDark
+          ? const StatusPalette(background: Color(0xFF123A22), foreground: Color(0xFF6EE7A8))
+          : const StatusPalette(background: Color(0xFFD9F7E3), foreground: Color(0xFF15803D));
+    case MaterialRequestStatus.rejected:
+      return isDark
+          ? const StatusPalette(background: Color(0xFF4A1616), foreground: Color(0xFFFF9B9B))
+          : const StatusPalette(background: Color(0xFFFBDADA), foreground: Color(0xFFB42318));
+    case MaterialRequestStatus.fulfilled:
+      return isDark
+          ? const StatusPalette(background: Color(0xFF12313A), foreground: Color(0xFF7DD3E8))
+          : const StatusPalette(background: Color(0xFFD8F0F7), foreground: Color(0xFF0E6B85));
     default:
       return isDark
           ? const StatusPalette(background: Color(0xFF3A3D42), foreground: Color(0xFFD0D3D9))

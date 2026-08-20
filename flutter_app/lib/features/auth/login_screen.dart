@@ -23,6 +23,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _showForgotPasswordDialog() async {
+    final resetEmailController = TextEditingController(text: _emailController.text.trim());
+    final email = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset password'),
+        content: TextField(
+          controller: resetEmailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(resetEmailController.text.trim()),
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
+    resetEmailController.dispose();
+    if (email != null && email.isNotEmpty) {
+      ref.read(authControllerProvider).resetPassword(email);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final message = ref.watch(authMessageProvider);
@@ -67,7 +96,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _showForgotPasswordDialog,
+                    child: const Text('Forgot password?'),
+                  ),
+                ),
                 FilledButton(
                   onPressed: () {
                     final email = _emailController.text.trim();

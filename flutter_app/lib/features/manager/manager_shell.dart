@@ -18,6 +18,7 @@ class ManagerShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.groups), label: 'Staff'),
           NavigationDestination(icon: Icon(Icons.task), label: 'My Tasks'),
+          NavigationDestination(icon: Icon(Icons.assignment), label: 'Reports'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

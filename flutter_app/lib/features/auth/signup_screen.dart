@@ -94,7 +94,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           firstName: _firstName.text,
                           lastName: _lastName.text,
                           phone: _phone.text,
-                          role: 'employee',
                           email: _email.text,
                           password: _password.text,
                         );
@@ -112,6 +111,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => context.go('/login'),
+                child: const Text('Already have an account? Log In'),
+              ),
             ],
           ),
         ),

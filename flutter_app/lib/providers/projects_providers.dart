@@ -4,10 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/employee.dart';
 import '../models/project.dart';
+import 'auth_providers.dart';
 import 'firebase_providers.dart';
 
 final allProjectsProvider = StreamProvider<List<Project>>((ref) {
   return ref.watch(firestoreServiceProvider).watchAllProjects();
+});
+
+/// Role-aware project list: admin sees every project, a manager only the
+/// ones they're a member of. Workers don't currently browse a project list.
+final visibleProjectsProvider = StreamProvider<List<Project>>((ref) {
+  final me = ref.watch(currentEmployeeProvider).value;
+  if (me == null) return Stream.value(const []);
+  if (me.isAdmin) return ref.watch(firestoreServiceProvider).watchAllProjects();
+  return ref.watch(firestoreServiceProvider).watchProjectsForMember(me.id);
 });
 
 final projectByIdProvider = StreamProvider.family<Project?, String>((ref, projectId) {

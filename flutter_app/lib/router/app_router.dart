@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/admin/admin_home_screen.dart';
+import '../features/admin/admin_profile_screen.dart';
+import '../features/admin/admin_shell.dart';
+import '../features/admin/admin_staff_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/employee/employee_home_screen.dart';
@@ -15,7 +19,12 @@ import '../features/manager/manager_tasks_screen.dart';
 import '../features/manager/project_employees_screen.dart';
 import '../features/manager/project_tasks_screen.dart';
 import '../features/manager/project_view_screen.dart';
+import '../features/manager/staff_profile_screen.dart';
 import '../features/manager/task_view_screen.dart';
+import '../features/shared/daily_report_view_screen.dart';
+import '../features/shared/material_request_view_screen.dart';
+import '../features/shared/notifications_screen.dart';
+import '../features/shared/reports_screen.dart';
 import '../features/shared/splash_screen.dart';
 import '../providers/auth_providers.dart';
 
@@ -31,6 +40,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AdminShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/admin', builder: (context, state) => const AdminHomeScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/admin/staff', builder: (context, state) => const AdminStaffScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/admin/reports', builder: (context, state) => const ReportsScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/admin/profile', builder: (context, state) => const AdminProfileScreen()),
+          ]),
+        ],
+      ),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -52,6 +80,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ),
           ]),
           StatefulShellBranch(routes: [
+            GoRoute(path: '/manager/reports', builder: (context, state) => const ReportsScreen()),
+          ]),
+          StatefulShellBranch(routes: [
             GoRoute(
               path: '/manager/profile',
               builder: (context, state) => const ManagerProfileScreen(),
@@ -68,6 +99,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/employee', builder: (context, state) => const EmployeeHomeScreen()),
           ]),
           StatefulShellBranch(routes: [
+            GoRoute(path: '/employee/reports', builder: (context, state) => const ReportsScreen()),
+          ]),
+          StatefulShellBranch(routes: [
             GoRoute(
               path: '/employee/profile',
               builder: (context, state) => const EmployeeProfileScreen(),
@@ -76,7 +110,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Global routes, reachable from either role, pushed over the shell.
+      // Global routes, reachable from any role, pushed over the shell.
+      GoRoute(
+        path: '/staff/:employeeId',
+        builder: (context, state) =>
+            StaffProfileScreen(employeeId: state.pathParameters['employeeId']!),
+      ),
       GoRoute(
         path: '/project/:projectId',
         builder: (context, state) =>
@@ -96,12 +135,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/task/:taskId',
         builder: (context, state) => TaskViewScreen(taskId: state.pathParameters['taskId']!),
       ),
+      GoRoute(
+        path: '/material-requests/:requestId',
+        builder: (context, state) =>
+            MaterialRequestViewScreen(requestId: state.pathParameters['requestId']!),
+      ),
+      GoRoute(
+        path: '/daily-reports/:reportId',
+        builder: (context, state) =>
+            DailyReportViewScreen(reportId: state.pathParameters['reportId']!),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
     ],
   );
 });
 
 bool _isGlobalRoute(String location) =>
-    location.startsWith('/project') || location.startsWith('/task');
+    location.startsWith('/project') ||
+    location.startsWith('/task') ||
+    location.startsWith('/staff') ||
+    location.startsWith('/material-requests') ||
+    location.startsWith('/daily-reports') ||
+    location.startsWith('/notifications');
 
 String? _redirect(Ref ref, GoRouterState state) {
   final location = state.matchedLocation;
@@ -129,10 +187,15 @@ String? _redirect(Ref ref, GoRouterState state) {
     return loggingIn ? null : '/login';
   }
 
+  final isAdminRoute = location.startsWith('/admin');
   final isManagerRoute = location.startsWith('/manager');
   final isEmployeeRoute = location.startsWith('/employee');
 
-  if (employee.isManager) {
+  if (employee.isAdmin) {
+    if (loggingIn || location == '/splash' || (!isAdminRoute && !_isGlobalRoute(location))) {
+      return '/admin';
+    }
+  } else if (employee.isManager) {
     if (loggingIn || location == '/splash' || (!isManagerRoute && !_isGlobalRoute(location))) {
       return '/manager';
     }

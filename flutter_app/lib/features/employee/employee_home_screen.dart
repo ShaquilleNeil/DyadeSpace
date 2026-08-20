@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/task.dart';
 import '../../providers/tasks_providers.dart';
+import '../shared/widgets/notification_bell.dart';
 import '../shared/widgets/task_item.dart';
 
 class EmployeeHomeScreen extends ConsumerStatefulWidget {
@@ -40,6 +41,7 @@ class _EmployeeHomeScreenState extends ConsumerState<EmployeeHomeScreen>
       appBar: AppBar(
         title: const Text('My Tasks'),
         automaticallyImplyLeading: false,
+        actions: const [NotificationBell()],
         bottom: TabBar(
           controller: _tabController,
           tabs: List.generate(_statuses.length, (index) {

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -52,7 +53,16 @@ class _ProjectItemState extends State<ProjectItem> {
                 fit: StackFit.expand,
                 children: [
                   if (project.photoUrl?.isNotEmpty ?? false)
-                    Image.network(project.photoUrl!, fit: BoxFit.cover)
+                    CachedNetworkImage(
+                      imageUrl: project.photoUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                      errorWidget: (context, url, error) =>
+                          Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                    )
                   else
                     Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                   DecoratedBox(

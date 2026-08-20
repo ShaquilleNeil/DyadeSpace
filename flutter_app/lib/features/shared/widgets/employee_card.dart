@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/employee.dart';
@@ -12,11 +13,15 @@ class EmployeeCard extends StatelessWidget {
     required this.employee,
     required this.taskCount,
     required this.onAddTask,
+    this.onTap,
+    this.actionIcon = Icons.add,
   });
 
   final Employee employee;
   final int taskCount;
   final VoidCallback onAddTask;
+  final VoidCallback? onTap;
+  final IconData actionIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +35,10 @@ class EmployeeCard extends StatelessWidget {
             right: 0,
             top: 0,
             child: Card(
-              child: Stack(
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.topCenter,
                 children: [
@@ -61,7 +69,7 @@ class EmployeeCard extends StatelessWidget {
                         CircleAvatar(
                           radius: 28,
                           backgroundImage: (employee.avatarUrl?.isNotEmpty ?? false)
-                              ? NetworkImage(employee.avatarUrl!)
+                              ? CachedNetworkImageProvider(employee.avatarUrl!)
                               : null,
                           child: (employee.avatarUrl?.isNotEmpty ?? false)
                               ? null
@@ -84,6 +92,7 @@ class EmployeeCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           ),
@@ -92,7 +101,7 @@ class EmployeeCard extends StatelessWidget {
             right: -6,
             child: IconButton.filled(
               onPressed: onAddTask,
-              icon: const Icon(Icons.add, size: 18),
+              icon: Icon(actionIcon, size: 18),
               style: IconButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,

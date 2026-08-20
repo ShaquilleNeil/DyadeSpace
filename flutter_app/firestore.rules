@@ -7,12 +7,37 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function myDoc() {
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+    }
+
     function myRole() {
-      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role;
+      return myDoc().role;
+    }
+
+    function myProjectIds() {
+      return myDoc().projectIds;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && myRole() == 'admin';
     }
 
     function isManager() {
       return isSignedIn() && myRole() == 'manager';
+    }
+
+    // Manager (or admin) rights over a specific project id.
+    function managesProject(projectId) {
+      return isAdmin() || (isManager() && projectId in myProjectIds());
+    }
+
+    // Tasks may be quick-assigned directly to an employee with no project
+    // (projectId == null) — any manager can still touch those, matching the
+    // pre-existing "assign a task straight from Staff" flow; project-linked
+    // tasks are scoped to managers on that project.
+    function canManageTask(data) {
+      return isAdmin() || (isManager() && (data.projectId == null || data.projectId in myProjectIds()));
     }
 
     function onlyChangedFields(fields) {
@@ -20,32 +45,92 @@ service cloud.firestore {
     }
 
     match /employees/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isAdmin() ||
+        request.auth.uid == uid ||
+        (isSignedIn() && myProjectIds().hasAny(resource.data.projectIds));
 
-      // Signup: a user may create only their own employee doc.
-      allow create: if isSignedIn() && request.auth.uid == uid;
+      // Signup: a user may create only their own employee doc, always as a
+      // plain worker — role/project elevation happens through an admin update.
+      allow create: if isSignedIn() && request.auth.uid == uid &&
+        request.resource.data.role == 'employee' &&
+        request.resource.data.projectIds.size() == 0;
 
-      // Self-updates are allowed, but only a manager may change `role`.
+      // Self-updates (profile fields, fcmTokens) are always allowed; only an
+      // admin may change `role` or `projectIds`.
       allow update: if isSignedIn() && request.auth.uid == uid &&
-        (onlyChangedFields(['firstName', 'lastName', 'phone', 'email', 'avatarUrl']) || isManager());
+        onlyChangedFields(['firstName', 'lastName', 'phone', 'email', 'avatarUrl', 'fcmTokens']) ||
+        isAdmin();
 
-      allow delete: if isManager();
+      allow delete: if isAdmin();
     }
 
     match /projects/{projectId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isManager();
+      allow read: if isAdmin() ||
+        (isSignedIn() && request.auth.uid in resource.data.memberIds);
+      allow create, delete: if isAdmin();
+      // Admin manages membership/details; a manager on the project may edit
+      // its non-membership details but not who's on it (that's admin's job).
+      allow update: if isAdmin() ||
+        (isManager() && request.auth.uid in resource.data.memberIds &&
+         onlyChangedFields(['name', 'description', 'address', 'photoUrl']));
     }
 
     match /tasks/{taskId} {
-      allow read: if isSignedIn();
-      allow create, delete: if isManager();
+      allow read: if isAdmin() ||
+        (isSignedIn() && request.auth.uid in resource.data.assigneeIds) ||
+        (isSignedIn() && resource.data.projectId != null && resource.data.projectId in myProjectIds());
 
-      // Managers can update any field; an assigned employee may only update `status`.
-      allow update: if isManager() ||
+      allow create: if canManageTask(request.resource.data);
+
+      allow delete: if canManageTask(resource.data);
+
+      // Admin/scoped-manager can update any field; an assigned employee may
+      // only update `status` plus the completion photos/note.
+      allow update: if canManageTask(resource.data) ||
         (isSignedIn() &&
          request.auth.uid in resource.data.assigneeIds &&
-         onlyChangedFields(['status']));
+         onlyChangedFields(['status', 'completionPhotoUrls', 'completionNote']));
+    }
+
+    match /materialRequests/{requestId} {
+      allow read: if isAdmin() ||
+        resource.data.requestedById == request.auth.uid ||
+        managesProject(resource.data.projectId);
+
+      allow create: if isSignedIn() &&
+        request.resource.data.requestedById == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.projectId in myProjectIds();
+
+      // Requester may edit their own request while still pending; a manager
+      // of the project (or admin) can only change the decision fields.
+      allow update: if (resource.data.requestedById == request.auth.uid &&
+          resource.data.status == 'pending' &&
+          onlyChangedFields(['items', 'photoUrls', 'notes'])) ||
+        (managesProject(resource.data.projectId) &&
+         onlyChangedFields(['status', 'managerNote', 'decidedById', 'decidedAt']));
+
+      allow delete: if isAdmin() ||
+        (resource.data.requestedById == request.auth.uid && resource.data.status == 'pending');
+    }
+
+    match /dailyReports/{reportId} {
+      allow read: if isAdmin() ||
+        resource.data.submittedById == request.auth.uid ||
+        managesProject(resource.data.projectId);
+
+      allow create: if isSignedIn() &&
+        request.resource.data.submittedById == request.auth.uid &&
+        request.resource.data.projectId in myProjectIds();
+
+      allow update, delete: if isAdmin() || resource.data.submittedById == request.auth.uid;
+    }
+
+    match /notifications/{notificationId} {
+      // Written only by Cloud Functions via the Admin SDK, which bypasses
+      // these rules — clients only ever read/mark-read their own.
+      allow read, update, delete: if isSignedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if false;
     }
   }
 }

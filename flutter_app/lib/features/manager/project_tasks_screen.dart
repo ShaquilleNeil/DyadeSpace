@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/task.dart';
 import '../../providers/projects_providers.dart';
 import '../../providers/tasks_providers.dart';
+import '../../utils/confirm.dart';
 import '../shared/widgets/task_item.dart';
 
 class ProjectTasksScreen extends ConsumerStatefulWidget {
@@ -71,7 +72,16 @@ class _ProjectTasksScreenState extends ConsumerState<ProjectTasksScreen>
                     return TaskItem(
                       task: task,
                       showRemove: true,
-                      onRemove: () => ref.read(taskControllerProvider).deleteTask(task.id),
+                      onRemove: () async {
+                        final confirmed = await confirmDialog(
+                          context,
+                          title: 'Delete task?',
+                          message: 'This permanently deletes "${task.title}". This can\'t be undone.',
+                        );
+                        if (confirmed) {
+                          ref.read(taskControllerProvider).deleteTask(task.id);
+                        }
+                      },
                     );
                   },
                 );

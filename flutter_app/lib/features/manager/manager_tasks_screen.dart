@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/employee.dart';
 import '../../models/task.dart';
+import '../../providers/employees_providers.dart';
 import '../../providers/tasks_providers.dart';
+import '../shared/widgets/task_form.dart';
 import '../shared/widgets/task_item.dart';
 
 class ManagerTasksScreen extends ConsumerStatefulWidget {
@@ -31,9 +34,28 @@ class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
     super.dispose();
   }
 
+  void _openTaskForm(List<Employee> allEmployees) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => TaskForm(
+        projectId: null,
+        allEmployees: allEmployees,
+        preselectedEmployee: null,
+        onSave: (entries) {
+          for (final (task, employeeIds) in entries) {
+            ref.read(taskControllerProvider).addTaskAndAssign(task, employeeIds);
+          }
+          Navigator.of(sheetContext).pop();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasksAsync = ref.watch(myTasksProvider);
+    final employeesAsync = ref.watch(visibleEmployeesProvider);
     final tasks = tasksAsync.value ?? const [];
 
     return Scaffold(
@@ -47,6 +69,12 @@ class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
             return Tab(text: '${_tabLabels[index]} ($count)');
           }),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: employeesAsync.value == null
+            ? null
+            : () => _openTaskForm(employeesAsync.value!),
+        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         child: tasksAsync.when(
