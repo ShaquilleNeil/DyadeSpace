@@ -76,3 +76,23 @@ export async function projectOverseerIds(projectId: string): Promise<string[]> {
   ]);
   return [...managers.docs, ...admins.docs].map((d) => d.id);
 }
+
+/** Every admin — the fallback audience for tasks with no [projectId]. */
+export async function adminIds(): Promise<string[]> {
+  const admins = await db().collection("employees").where("role", "==", "admin").get();
+  return admins.docs.map((d) => d.id);
+}
+
+/** "Jane Doe", "Jane Doe and Sam Lee", or "Jane Doe and 2 others" — for a
+ *  notification body naming whoever's assigned to a task. */
+export async function describeAssignees(assigneeIds: string[]): Promise<string> {
+  if (assigneeIds.length === 0) return "Someone";
+  const snaps = await Promise.all(assigneeIds.map((id) => db().collection("employees").doc(id).get()));
+  const names = snaps
+    .map((s) => `${s.get("firstName") ?? ""} ${s.get("lastName") ?? ""}`.trim())
+    .filter((n) => n.length > 0);
+  if (names.length === 0) return "Someone";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names[0]} and ${names.length - 1} others`;
+}

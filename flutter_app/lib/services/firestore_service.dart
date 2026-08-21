@@ -133,6 +133,11 @@ class FirestoreService {
         );
   }
 
+  Future<List<Project>> fetchProjectsForMember(String uid) async {
+    final snap = await _projects.where('memberIds', arrayContains: uid).get();
+    return snap.docs.map(Project.fromDoc).toList();
+  }
+
   Future<Project?> fetchProject(String projectId) async {
     final doc = await _projects.doc(projectId).get();
     if (!doc.exists) return null;

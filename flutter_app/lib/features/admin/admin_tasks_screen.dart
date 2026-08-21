@@ -8,14 +8,17 @@ import '../../providers/tasks_providers.dart';
 import '../shared/widgets/task_form.dart';
 import '../shared/widgets/task_item.dart';
 
-class ManagerTasksScreen extends ConsumerStatefulWidget {
-  const ManagerTasksScreen({super.key});
+/// Every task across every project — the admin-scoped counterpart to
+/// `ManagerTasksScreen`'s "My Tasks" (admin isn't usually a task assignee,
+/// so this shows everything instead of just their own).
+class AdminTasksScreen extends ConsumerStatefulWidget {
+  const AdminTasksScreen({super.key});
 
   @override
-  ConsumerState<ManagerTasksScreen> createState() => _ManagerTasksScreenState();
+  ConsumerState<AdminTasksScreen> createState() => _AdminTasksScreenState();
 }
 
-class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
+class _AdminTasksScreenState extends ConsumerState<AdminTasksScreen>
     with SingleTickerProviderStateMixin {
   static const _tabLabels = ['To-Do', 'In Progress', 'Done'];
   static const _statuses = [TaskStatus.todo, TaskStatus.inProgress, TaskStatus.done];
@@ -54,13 +57,13 @@ class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
 
   @override
   Widget build(BuildContext context) {
-    final tasksAsync = ref.watch(myTasksProvider);
+    final tasksAsync = ref.watch(allTasksProvider);
     final employeesAsync = ref.watch(visibleEmployeesProvider);
     final tasks = tasksAsync.value ?? const [];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Tasks'),
+        title: const Text('Tasks'),
         automaticallyImplyLeading: false,
         bottom: TabBar(
           controller: _tabController,
@@ -71,8 +74,12 @@ class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        // See admin_tasks_screen.dart for why every tab FAB needs its own tag.
-        heroTag: 'managerTasksFab',
+        // Every bottom-nav-tab FAB in the app needs an explicit tag: the
+        // shells use StatefulShellRoute.indexedStack, which keeps every
+        // branch's widget tree alive at once, so two unrelated FABs sharing
+        // the default hero tag collide with "multiple heroes share the same
+        // tag" the moment any hero flight runs.
+        heroTag: 'adminTasksFab',
         onPressed: employeesAsync.value == null
             ? null
             : () => _openTaskForm(employeesAsync.value!),

@@ -17,6 +17,7 @@ class AdminShell extends StatelessWidget {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.groups), label: 'Staff'),
+          NavigationDestination(icon: Icon(Icons.checklist), label: 'Tasks'),
           NavigationDestination(icon: Icon(Icons.assignment), label: 'Reports'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],

@@ -88,6 +88,17 @@ class AuthController {
 
   Future<void> signOut() async {
     try {
+      // Drop this device's token from the outgoing employee's doc first —
+      // otherwise it lingers there and pushes meant for whoever logs in
+      // next on this device keep firing to the previous account too.
+      final uid = _ref.read(currentEmployeeProvider).value?.id;
+      if (uid != null) {
+        final token = await _ref.read(notificationServiceProvider).getToken();
+        if (token != null) {
+          await _ref.read(firestoreServiceProvider).removeFcmToken(uid, token);
+        }
+      }
+
       await _ref.read(authServiceProvider).signOut();
       _ref.read(authMessageProvider.notifier).set('Sign out successful');
     } catch (e) {

@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/daily_report.dart';
 import '../../models/material_request.dart';
+import '../../models/project.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/daily_reports_providers.dart';
+import '../../providers/firebase_providers.dart';
 import '../../providers/material_requests_providers.dart';
-import '../../providers/projects_providers.dart';
 import '../../utils/friendly_error.dart';
 import 'widgets/daily_report_form.dart';
 import 'widgets/daily_reports_list.dart';
@@ -35,8 +36,34 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
     super.dispose();
   }
 
-  void _openMaterialRequestForm() {
-    final projects = ref.read(visibleProjectsProvider).value ?? const [];
+  /// Resolves the projects the signed-in user can submit against via a
+  /// plain one-time fetch (not the reactive [myMemberProjectsProvider]
+  /// stream) — a form dropdown just needs a snapshot, not a live
+  /// subscription, and a direct `.get()` sidesteps relying on a
+  /// StreamProvider's `.future` resolving from a cold, unwatched state.
+  Future<List<Project>?> _resolveMyProjects() async {
+    final me = ref.read(currentEmployeeProvider).value;
+    if (me == null) return const [];
+    try {
+      return await ref
+          .read(firestoreServiceProvider)
+          .fetchProjectsForMember(me.id)
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(friendlyErrorMessage(e, fallback: 'Could not load your projects. Please try again.')),
+        ),
+      );
+      return null;
+    }
+  }
+
+  Future<void> _openMaterialRequestForm() async {
+    final projects = await _resolveMyProjects();
+    if (!mounted || projects == null) return;
     if (projects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("You're not assigned to a project yet")),
@@ -78,8 +105,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
     );
   }
 
-  void _openDailyReportForm() {
-    final projects = ref.read(visibleProjectsProvider).value ?? const [];
+  Future<void> _openDailyReportForm() async {
+    final projects = await _resolveMyProjects();
+    if (!mounted || projects == null) return;
     if (projects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("You're not assigned to a project yet")),
@@ -125,7 +153,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final me = ref.watch(currentEmployeeProvider).value;
-    final canSubmit = me != null && !me.isAdmin;
+    final canSubmit = me != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -142,6 +170,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
       floatingActionButton: !canSubmit
           ? null
           : FloatingActionButton(
+              // See admin_tasks_screen.dart for why every tab FAB needs its own tag.
+              heroTag: 'reportsFab',
               onPressed:
                   _tabController.index == 0 ? _openMaterialRequestForm : _openDailyReportForm,
               child: const Icon(Icons.add),

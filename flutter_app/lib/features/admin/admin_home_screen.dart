@@ -48,6 +48,8 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
         actions: const [NotificationBell()],
       ),
       floatingActionButton: FloatingActionButton(
+        // See admin_tasks_screen.dart for why every tab FAB needs its own tag.
+        heroTag: 'adminHomeFab',
         onPressed: _openAddProjectSheet,
         child: const Icon(Icons.add),
       ),

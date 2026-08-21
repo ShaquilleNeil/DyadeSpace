@@ -6,7 +6,7 @@ import {
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 
-import { notify, notifyMany, projectOverseerIds } from "./notify";
+import { adminIds, describeAssignees, notify, notifyMany, projectOverseerIds } from "./notify";
 
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1", maxInstances: 10 });
@@ -26,6 +26,35 @@ export const onTaskAssigneesChanged = onDocumentWritten("tasks/{taskId}", async 
     type: "task_assigned",
     title: "New task assigned",
     body: after.title ? `You were assigned "${after.title}"` : "You were assigned a new task",
+    deepLink: `/task/${event.params.taskId}`,
+  });
+});
+
+/** A task moving to in-progress or done notifies the project's managers and
+ *  admins (project-less quick-assigned tasks fall back to just admins) —
+ *  not the assignee(s) whose own status change this is. */
+export const onTaskStatusChanged = onDocumentUpdated("tasks/{taskId}", async (event) => {
+  const before = event.data?.before?.data();
+  const after = event.data?.after?.data();
+  if (!before || !after) return;
+  if (before.status === after.status) return;
+  if (after.status !== "in-progress" && after.status !== "done") return;
+
+  const assigneeIds: string[] = after.assigneeIds ?? [];
+  const overseerIds = after.projectId
+    ? await projectOverseerIds(after.projectId)
+    : await adminIds();
+  const recipients = overseerIds.filter((id) => !assigneeIds.includes(id));
+  if (recipients.length === 0) return;
+
+  const who = await describeAssignees(assigneeIds);
+  const taskTitle = after.title ? `"${after.title}"` : "a task";
+  const verb = after.status === "in-progress" ? "started" : "finished";
+
+  await notifyMany(recipients, {
+    type: "task_status_changed",
+    title: after.status === "in-progress" ? "Task started" : "Task completed",
+    body: `${who} ${verb} ${taskTitle}`,
     deepLink: `/task/${event.params.taskId}`,
   });
 });
@@ -69,21 +98,15 @@ export const onMaterialRequestDecided = onDocumentUpdated(
   }
 );
 
-/** A submitted daily report notifies the project's managers (not admin — the
- *  in-app "all reports" view already covers admin without extra push noise). */
+/** A submitted daily report notifies the project's managers and every admin. */
 export const onDailyReportCreated = onDocumentCreated(
   "dailyReports/{reportId}",
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
 
-    const db = admin.firestore();
-    const managers = await db
-      .collection("employees")
-      .where("role", "==", "manager")
-      .where("projectIds", "array-contains", data.projectId)
-      .get();
-    const recipients = managers.docs.map((d) => d.id).filter((id) => id !== data.submittedById);
+    const overseerIds = await projectOverseerIds(data.projectId);
+    const recipients = overseerIds.filter((id) => id !== data.submittedById);
     if (recipients.length === 0) return;
 
     await notifyMany(recipients, {

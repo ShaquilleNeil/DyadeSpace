@@ -6,6 +6,7 @@ import '../features/admin/admin_home_screen.dart';
 import '../features/admin/admin_profile_screen.dart';
 import '../features/admin/admin_shell.dart';
 import '../features/admin/admin_staff_screen.dart';
+import '../features/admin/admin_tasks_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/employee/employee_home_screen.dart';
@@ -50,6 +51,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/admin/staff', builder: (context, state) => const AdminStaffScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/admin/tasks', builder: (context, state) => const AdminTasksScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: '/admin/reports', builder: (context, state) => const ReportsScreen()),
