@@ -41,6 +41,12 @@ String friendlyErrorMessage(
       case 'not-found':
       case 'object-not-found':
         return 'That item could not be found — it may have been deleted.';
+      case 'unauthenticated':
+        return 'Please sign in and try again.';
+      case 'already-exists':
+        return 'An account already exists for that email.';
+      case 'invalid-argument':
+        return 'Please check the details and try again.';
       default:
         return fallback;
     }

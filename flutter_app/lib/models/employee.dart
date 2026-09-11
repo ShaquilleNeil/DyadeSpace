@@ -4,8 +4,9 @@ class EmployeeRole {
   static const admin = 'admin';
   static const manager = 'manager';
   static const employee = 'employee';
+  static const client = 'client';
 
-  static const all = [admin, manager, employee];
+  static const all = [admin, manager, employee, client];
 
   static String label(String role) {
     switch (role) {
@@ -15,6 +16,8 @@ class EmployeeRole {
         return 'Manager';
       case employee:
         return 'Worker';
+      case client:
+        return 'Client';
       default:
         return role;
     }
@@ -27,7 +30,7 @@ class Employee {
   final String? lastName;
   final String? phone;
   final String? email;
-  final String role; // "admin" | "manager" | "employee"
+  final String role; // "admin" | "manager" | "employee" | "client"
   final String? avatarUrl;
   final DateTime? createdAt;
   // Denormalized mirror of every project's `memberIds` this employee is on —
@@ -50,6 +53,7 @@ class Employee {
 
   bool get isAdmin => role == EmployeeRole.admin;
   bool get isManager => role == EmployeeRole.manager;
+  bool get isClient => role == EmployeeRole.client;
 
   String get fullName =>
       [firstName, lastName].where((s) => s != null && s.isNotEmpty).join(' ');

@@ -3,40 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/projects_providers.dart';
 import '../shared/widgets/notification_bell.dart';
-import '../shared/widgets/project_form.dart';
 import '../shared/widgets/project_item.dart';
 import '../shared/widgets/search_field.dart';
 import '../../utils/friendly_error.dart';
 
-/// Admin sees and creates every project — staffing (who's on it, their
-/// role) is managed from the Staff tab instead of here.
-class AdminHomeScreen extends ConsumerStatefulWidget {
-  const AdminHomeScreen({super.key});
+/// A client's read-only view of the project(s) they've been added to —
+/// admin assigns projects via the Staff screen's Clients filter.
+class ClientHomeScreen extends ConsumerStatefulWidget {
+  const ClientHomeScreen({super.key});
 
   @override
-  ConsumerState<AdminHomeScreen> createState() => _AdminHomeScreenState();
+  ConsumerState<ClientHomeScreen> createState() => _ClientHomeScreenState();
 }
 
-class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
+class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   String _query = '';
-
-  void _openAddProjectSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => ProjectForm(
-        onSave: (name, description, address, photo) async {
-          await ref.read(projectControllerProvider).createProject(
-                name: name,
-                description: description,
-                address: address,
-                photoFile: photo,
-              );
-          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +25,9 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Projects'),
+        title: const Text('Projects'),
         automaticallyImplyLeading: false,
         actions: const [NotificationBell()],
-      ),
-      floatingActionButton: FloatingActionButton(
-        // See admin_tasks_screen.dart for why every tab FAB needs its own tag.
-        heroTag: 'adminHomeFab',
-        onPressed: _openAddProjectSheet,
-        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         child: Column(

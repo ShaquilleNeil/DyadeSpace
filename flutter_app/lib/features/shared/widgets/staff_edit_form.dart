@@ -42,6 +42,7 @@ class _StaffEditFormState extends State<StaffEditForm> {
         const SizedBox(height: AppSpacing.sm),
         SegmentedButton<String>(
           segments: const [
+            ButtonSegment(value: EmployeeRole.client, label: Text('Client')),
             ButtonSegment(value: EmployeeRole.employee, label: Text('Worker')),
             ButtonSegment(value: EmployeeRole.manager, label: Text('Manager')),
           ],

@@ -9,6 +9,9 @@ import '../features/admin/admin_staff_screen.dart';
 import '../features/admin/admin_tasks_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/signup_screen.dart';
+import '../features/client/client_home_screen.dart';
+import '../features/client/client_profile_screen.dart';
+import '../features/client/client_shell.dart';
 import '../features/employee/employee_home_screen.dart';
 import '../features/employee/employee_profile_screen.dart';
 import '../features/employee/employee_shell.dart';
@@ -114,6 +117,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            ClientShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/client', builder: (context, state) => const ClientHomeScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/client/profile',
+              builder: (context, state) => const ClientProfileScreen(),
+            ),
+          ]),
+        ],
+      ),
+
       // Global routes, reachable from any role, pushed over the shell.
       GoRoute(
         path: '/staff/:employeeId',
@@ -165,6 +184,16 @@ bool _isGlobalRoute(String location) =>
     location.startsWith('/daily-reports') ||
     location.startsWith('/notifications');
 
+// Clients get a narrower slice of the global routes than staff: they have no
+// Firestore read access to other employees' docs (see firestore.rules), so
+// the staff directory and project-employees screens don't work for them, and
+// material requests are staff-only.
+bool _isClientGlobalRoute(String location) =>
+    (location.startsWith('/project') && !location.contains('/employees')) ||
+    location.startsWith('/task') ||
+    location.startsWith('/daily-reports') ||
+    location.startsWith('/notifications');
+
 String? _redirect(Ref ref, GoRouterState state) {
   final location = state.matchedLocation;
   final loggingIn = location == '/login' || location == '/signup';
@@ -194,6 +223,7 @@ String? _redirect(Ref ref, GoRouterState state) {
   final isAdminRoute = location.startsWith('/admin');
   final isManagerRoute = location.startsWith('/manager');
   final isEmployeeRoute = location.startsWith('/employee');
+  final isClientRoute = location.startsWith('/client');
 
   if (employee.isAdmin) {
     if (loggingIn || location == '/splash' || (!isAdminRoute && !_isGlobalRoute(location))) {
@@ -202,6 +232,10 @@ String? _redirect(Ref ref, GoRouterState state) {
   } else if (employee.isManager) {
     if (loggingIn || location == '/splash' || (!isManagerRoute && !_isGlobalRoute(location))) {
       return '/manager';
+    }
+  } else if (employee.isClient) {
+    if (loggingIn || location == '/splash' || (!isClientRoute && !_isClientGlobalRoute(location))) {
+      return '/client';
     }
   } else {
     if (loggingIn || location == '/splash' || (!isEmployeeRoute && !_isGlobalRoute(location))) {

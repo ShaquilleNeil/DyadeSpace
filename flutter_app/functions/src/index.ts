@@ -11,6 +11,8 @@ import { adminIds, describeAssignees, notify, notifyMany, projectOverseerIds } f
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 
+export { inviteStaff } from "./invite";
+
 /** New task assignments push a notification to each newly-added assignee. */
 export const onTaskAssigneesChanged = onDocumentWritten("tasks/{taskId}", async (event) => {
   const before = event.data?.before?.data();

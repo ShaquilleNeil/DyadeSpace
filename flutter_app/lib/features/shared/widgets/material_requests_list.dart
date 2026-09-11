@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/material_requests_providers.dart';
 import '../../../providers/projects_providers.dart';
 import 'material_request_card.dart';
+import '../../../utils/friendly_error.dart';
 
 /// Role-scoped material request feed — the provider itself decides what's
 /// visible (own submissions for a worker, project-scoped for a manager,
@@ -17,7 +18,7 @@ class MaterialRequestsList extends ConsumerWidget {
 
     return requestsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
       data: (requests) {
         if (requests.isEmpty) {
           return const Center(child: Text('No material requests yet'));

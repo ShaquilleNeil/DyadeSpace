@@ -7,6 +7,7 @@ import '../../providers/employees_providers.dart';
 import '../../providers/tasks_providers.dart';
 import '../shared/widgets/task_form.dart';
 import '../shared/widgets/task_item.dart';
+import '../../utils/friendly_error.dart';
 
 /// Every task across every project — the admin-scoped counterpart to
 /// `ManagerTasksScreen`'s "My Tasks" (admin isn't usually a task assignee,
@@ -88,7 +89,7 @@ class _AdminTasksScreenState extends ConsumerState<AdminTasksScreen>
       body: SafeArea(
         child: tasksAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (tasks) {
             return TabBarView(
               controller: _tabController,

@@ -53,9 +53,9 @@ class AuthController {
       final user =
           await _ref.read(authServiceProvider).signUp(email: email, password: password);
 
-      // Self-signup always creates a plain worker with no project — role
-      // elevation and project assignment only ever happen through an admin's
-      // staff-edit sheet (also enforced server-side by firestore.rules).
+      // Self-signup always creates a client account with no project — staff
+      // accounts are created only via the admin invite flow (also enforced
+      // server-side by firestore.rules).
       await _ref.read(firestoreServiceProvider).createEmployee(
             Employee(
               id: user.uid,
@@ -63,7 +63,7 @@ class AuthController {
               lastName: lastName,
               phone: phone,
               email: email,
-              role: EmployeeRole.employee,
+              role: EmployeeRole.client,
             ),
           );
 

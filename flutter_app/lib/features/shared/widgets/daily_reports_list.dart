@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/daily_reports_providers.dart';
 import '../../../providers/projects_providers.dart';
 import 'daily_report_card.dart';
+import '../../../utils/friendly_error.dart';
 
 /// Role-scoped daily report feed — mirrors [MaterialRequestsList].
 class DailyReportsList extends ConsumerWidget {
@@ -15,7 +16,7 @@ class DailyReportsList extends ConsumerWidget {
 
     return reportsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
       data: (reports) {
         if (reports.isEmpty) {
           return const Center(child: Text('No daily reports yet'));

@@ -5,6 +5,7 @@ import '../../providers/projects_providers.dart';
 import '../shared/widgets/notification_bell.dart';
 import '../shared/widgets/project_item.dart';
 import '../shared/widgets/search_field.dart';
+import '../../utils/friendly_error.dart';
 
 class ManagerHomeScreen extends ConsumerStatefulWidget {
   const ManagerHomeScreen({super.key});
@@ -35,7 +36,7 @@ class _ManagerHomeScreenState extends ConsumerState<ManagerHomeScreen> {
             Expanded(
               child: projectsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, st) => Center(child: Text('Error: $e')),
+                error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
                 data: (projects) {
                   final displayed = _query.trim().isEmpty
                       ? projects

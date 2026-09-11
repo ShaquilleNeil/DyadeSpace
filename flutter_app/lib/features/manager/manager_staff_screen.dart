@@ -8,6 +8,7 @@ import '../../providers/tasks_providers.dart';
 import '../shared/widgets/employee_card.dart';
 import '../shared/widgets/search_field.dart';
 import '../shared/widgets/task_form.dart';
+import '../../utils/friendly_error.dart';
 
 class ManagerStaffScreen extends ConsumerStatefulWidget {
   const ManagerStaffScreen({super.key});
@@ -50,7 +51,7 @@ class _ManagerStaffScreenState extends ConsumerState<ManagerStaffScreen> {
             Expanded(
               child: employeesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, st) => Center(child: Text('Error: $e')),
+                error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
                 data: (employees) {
                   final query = _query.toLowerCase();
                   final displayed = query.trim().isEmpty

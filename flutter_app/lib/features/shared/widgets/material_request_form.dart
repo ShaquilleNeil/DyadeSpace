@@ -135,6 +135,7 @@ class _MaterialRequestFormState extends State<MaterialRequestForm> {
                 if (_rows.length > 1)
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: 'Remove item',
                     onPressed: () => setState(() {
                       _rows[i].dispose();
                       _rows.removeAt(i);

@@ -371,6 +371,13 @@ class FirestoreService {
         .map((snap) => snap.docs.map(DailyReport.fromDoc).toList());
   }
 
+  Stream<List<DailyReport>> watchDailyReportsForProject(String projectId) {
+    return _dailyReports
+        .where('projectId', isEqualTo: projectId)
+        .snapshots()
+        .map((snap) => snap.docs.map(DailyReport.fromDoc).toList());
+  }
+
   Stream<List<DailyReport>> watchDailyReportsForProjects(List<String> projectIds) {
     return _mergeByIdChunks(
       projectIds,

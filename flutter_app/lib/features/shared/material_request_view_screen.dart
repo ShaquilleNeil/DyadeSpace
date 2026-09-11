@@ -47,7 +47,7 @@ class MaterialRequestViewScreen extends ConsumerWidget {
       body: SafeArea(
         child: requestAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (request) {
             if (request == null) {
               return const Center(child: Text('Request not found'));

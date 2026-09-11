@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../models/employee.dart';
 import '../../../providers/auth_providers.dart';
+import '../../../utils/friendly_error.dart';
 
 /// Shared by ManagerProfileScreen and EmployeeProfileScreen — the two were
 /// pixel-identical Kotlin screens differing only in which shell they lived
@@ -63,7 +64,7 @@ class _ProfileViewState extends ConsumerState<ProfileView> {
 
     return employeeAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
       data: (employee) {
         if (employee == null) {
           return const Center(child: Text('No profile found'));

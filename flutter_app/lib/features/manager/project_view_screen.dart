@@ -6,14 +6,17 @@ import 'package:go_router/go_router.dart';
 import '../../models/employee.dart';
 import '../../models/task.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/daily_reports_providers.dart';
 import '../../providers/employees_providers.dart';
 import '../../providers/projects_providers.dart';
 import '../../providers/tasks_providers.dart';
 import '../../theme/app_spacing.dart';
+import '../shared/widgets/daily_report_card.dart';
 import '../shared/widgets/employee_item.dart';
 import '../shared/widgets/form_sheet_scaffold.dart';
 import '../shared/widgets/task_form.dart';
 import '../shared/widgets/task_item.dart';
+import '../../utils/friendly_error.dart';
 
 /// Reserved bottom clearance so the last task in the list isn't hidden behind
 /// the fully-expanded 3-FAB speed dial (2 mini FABs + main FAB + gaps/margin).
@@ -32,6 +35,7 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
     with SingleTickerProviderStateMixin {
   bool _employeesExpanded = false;
   bool _tasksExpanded = false;
+  bool _reportsExpanded = false;
   bool _fabExpanded = false;
   static const _tabLabels = ['To-Do', 'In Progress', 'Done'];
   static const _statuses = [TaskStatus.todo, TaskStatus.inProgress, TaskStatus.done];
@@ -116,11 +120,17 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
     final tasksAsync = ref.watch(projectTasksProvider(widget.projectId));
     final allEmployeesAsync = ref.watch(visibleEmployeesProvider);
     final isAdmin = ref.watch(currentEmployeeProvider).value?.isAdmin ?? false;
+    final isClient = ref.watch(currentEmployeeProvider).value?.isClient ?? false;
+    // Only clients see the Reports section, so only start this listener for
+    // them — otherwise every project ever opened by a non-client leaves a
+    // Firestore listener running for no reason.
+    final reportsAsync =
+        isClient ? ref.watch(dailyReportsForProjectProvider(widget.projectId)) : null;
 
     return Scaffold(
       body: projectAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error: $e')),
+        error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
         data: (project) {
           if (project == null) {
             return const Center(child: Text('Loading project…'));
@@ -182,6 +192,7 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
                           shape: const CircleBorder(),
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            tooltip: 'Back',
                             onPressed: () => Navigator.pop(context),
                           ),
                         ),
@@ -203,33 +214,35 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
                             ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                       const Divider(height: AppSpacing.xxl),
-                      InkWell(
-                        onTap: () => setState(() => _employeesExpanded = !_employeesExpanded),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          child: Row(
-                            children: [
-                              Text('Employees (${employees.length})',
-                                  style: Theme.of(context).textTheme.titleMedium),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () => context.push('/project/${widget.projectId}/employees'),
-                                child: const Text('View All'),
-                              ),
-                              Icon(_employeesExpanded ? Icons.expand_less : Icons.expand_circle_down_outlined),
-                            ],
+                      if (!isClient) ...[
+                        InkWell(
+                          onTap: () => setState(() => _employeesExpanded = !_employeesExpanded),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            child: Row(
+                              children: [
+                                Text('Employees (${employees.length})',
+                                    style: Theme.of(context).textTheme.titleMedium),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () => context.push('/project/${widget.projectId}/employees'),
+                                  child: const Text('View All'),
+                                ),
+                                Icon(_employeesExpanded ? Icons.expand_less : Icons.expand_circle_down_outlined),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      if (_employeesExpanded)
-                        SizedBox(
-                          height: 110,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: employees.map((emp) => EmployeeItem(employee: emp)).toList(),
+                        if (_employeesExpanded)
+                          SizedBox(
+                            height: 110,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: employees.map((emp) => EmployeeItem(employee: emp)).toList(),
+                            ),
                           ),
-                        ),
-                      const SizedBox(height: AppSpacing.xs),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
                       InkWell(
                         onTap: () => setState(() => _tasksExpanded = !_tasksExpanded),
                         child: Padding(
@@ -265,6 +278,43 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
                         else
                           ...filteredTasks.map((t) => TaskItem(task: t)),
                       ],
+                      if (isClient) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        InkWell(
+                          onTap: () => setState(() => _reportsExpanded = !_reportsExpanded),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            child: Row(
+                              children: [
+                                Text('Reports (${reportsAsync!.value?.length ?? 0})',
+                                    style: Theme.of(context).textTheme.titleMedium),
+                                const Spacer(),
+                                Icon(_reportsExpanded ? Icons.expand_less : Icons.expand_circle_down_outlined),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (_reportsExpanded)
+                          reportsAsync.when(
+                            loading: () => const Padding(
+                              padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            error: (e, st) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                              child: Center(child: Text(friendlyErrorMessage(e))),
+                            ),
+                            data: (reports) => reports.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                                    child: Center(child: Text('No reports found')),
+                                  )
+                                : Column(
+                                    children:
+                                        reports.map((r) => DailyReportCard(report: r)).toList(),
+                                  ),
+                          ),
+                      ],
                       const SizedBox(height: _fabClearance),
                     ],
                   ),
@@ -274,7 +324,7 @@ class _ProjectViewScreenState extends ConsumerState<ProjectViewScreen>
           );
         },
       ),
-      floatingActionButton: projectAsync.value == null
+      floatingActionButton: (projectAsync.value == null || isClient)
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,

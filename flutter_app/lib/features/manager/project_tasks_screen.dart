@@ -6,6 +6,7 @@ import '../../providers/projects_providers.dart';
 import '../../providers/tasks_providers.dart';
 import '../../utils/confirm.dart';
 import '../shared/widgets/task_item.dart';
+import '../../utils/friendly_error.dart';
 
 class ProjectTasksScreen extends ConsumerStatefulWidget {
   const ProjectTasksScreen({super.key, required this.projectId});
@@ -55,7 +56,7 @@ class _ProjectTasksScreenState extends ConsumerState<ProjectTasksScreen>
       body: SafeArea(
         child: tasksAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (tasks) {
             return TabBarView(
               controller: _tabController,

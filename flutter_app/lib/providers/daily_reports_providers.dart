@@ -17,6 +17,14 @@ final visibleDailyReportsProvider = StreamProvider<List<DailyReport>>((ref) {
   return firestore.watchMyDailyReports(me.id);
 });
 
+/// Reports for a single project — used by the client-only "Reports" section
+/// on the shared project detail screen (clients don't have a global Reports
+/// tab, unlike admin/manager/employee).
+final dailyReportsForProjectProvider =
+    StreamProvider.autoDispose.family<List<DailyReport>, String>((ref, projectId) {
+  return ref.watch(firestoreServiceProvider).watchDailyReportsForProject(projectId);
+});
+
 final dailyReportByIdProvider =
     StreamProvider.autoDispose.family<DailyReport?, String>((ref, reportId) {
   return ref.watch(firestoreServiceProvider).watchDailyReportById(reportId);

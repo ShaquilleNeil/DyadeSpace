@@ -7,6 +7,7 @@ import '../../providers/employees_providers.dart';
 import '../../providers/tasks_providers.dart';
 import '../shared/widgets/task_form.dart';
 import '../shared/widgets/task_item.dart';
+import '../../utils/friendly_error.dart';
 
 class ManagerTasksScreen extends ConsumerStatefulWidget {
   const ManagerTasksScreen({super.key});
@@ -81,7 +82,7 @@ class _ManagerTasksScreenState extends ConsumerState<ManagerTasksScreen>
       body: SafeArea(
         child: tasksAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (tasks) {
             return TabBarView(
               controller: _tabController,

@@ -47,12 +47,13 @@ service cloud.firestore {
     match /employees/{uid} {
       allow read: if isAdmin() ||
         request.auth.uid == uid ||
-        (isSignedIn() && myProjectIds().hasAny(resource.data.projectIds));
+        (isSignedIn() && myRole() != 'client' && myProjectIds().hasAny(resource.data.projectIds));
 
       // Signup: a user may create only their own employee doc, always as a
-      // plain worker — role/project elevation happens through an admin update.
+      // client with no project — staff accounts are created only through the
+      // admin invite Cloud Function (which bypasses these rules via the Admin SDK).
       allow create: if isSignedIn() && request.auth.uid == uid &&
-        request.resource.data.role == 'employee' &&
+        request.resource.data.role == 'client' &&
         request.resource.data.projectIds.size() == 0;
 
       // Self-updates (profile fields, fcmTokens) are always allowed; only an
@@ -97,7 +98,7 @@ service cloud.firestore {
         resource.data.requestedById == request.auth.uid ||
         managesProject(resource.data.projectId);
 
-      allow create: if isSignedIn() &&
+      allow create: if isSignedIn() && myRole() != 'client' &&
         request.resource.data.requestedById == request.auth.uid &&
         request.resource.data.status == 'pending' &&
         request.resource.data.projectId in myProjectIds();
@@ -117,9 +118,10 @@ service cloud.firestore {
     match /dailyReports/{reportId} {
       allow read: if isAdmin() ||
         resource.data.submittedById == request.auth.uid ||
-        managesProject(resource.data.projectId);
+        managesProject(resource.data.projectId) ||
+        (isSignedIn() && myRole() == 'client' && resource.data.projectId in myProjectIds());
 
-      allow create: if isSignedIn() &&
+      allow create: if isSignedIn() && myRole() != 'client' &&
         request.resource.data.submittedById == request.auth.uid &&
         request.resource.data.projectId in myProjectIds();
 

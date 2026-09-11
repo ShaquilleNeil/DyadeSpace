@@ -7,6 +7,7 @@ import '../../providers/employees_providers.dart';
 import '../../providers/tasks_providers.dart';
 import '../../theme/app_spacing.dart';
 import '../shared/widgets/task_item.dart';
+import '../../utils/friendly_error.dart';
 
 /// Manager-facing staff detail — tapping an employee card in the staff
 /// directory lands here: name, phone, and their tasks split by status.
@@ -59,7 +60,7 @@ class _StaffProfileScreenState extends ConsumerState<StaffProfileScreen>
       body: SafeArea(
         child: employeeAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (employee) {
             if (employee == null) {
               return const Center(child: Text('Employee not found'));
@@ -112,7 +113,7 @@ class _StaffProfileScreenState extends ConsumerState<StaffProfileScreen>
                 Expanded(
                   child: tasksAsync.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, st) => Center(child: Text('Error: $e')),
+                    error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
                     data: (tasks) {
                       return TabBarView(
                         controller: _tabController,

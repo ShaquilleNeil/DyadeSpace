@@ -9,6 +9,7 @@ import '../../providers/daily_reports_providers.dart';
 import '../../providers/projects_providers.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/confirm.dart';
+import '../../utils/friendly_error.dart';
 
 class DailyReportViewScreen extends ConsumerWidget {
   const DailyReportViewScreen({super.key, required this.reportId});
@@ -25,7 +26,7 @@ class DailyReportViewScreen extends ConsumerWidget {
       body: SafeArea(
         child: reportAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (report) {
             if (report == null) {
               return const Center(child: Text('Report not found'));

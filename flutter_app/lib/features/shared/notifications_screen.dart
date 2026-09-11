@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../models/app_notification.dart';
 import '../../providers/notifications_providers.dart';
 import '../../theme/app_spacing.dart';
+import '../../utils/friendly_error.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -43,7 +44,7 @@ class NotificationsScreen extends ConsumerWidget {
       body: SafeArea(
         child: notificationsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (notifications) {
             if (notifications.isEmpty) {
               return const Center(child: Text('No notifications yet'));

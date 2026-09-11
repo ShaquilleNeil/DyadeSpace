@@ -153,6 +153,7 @@ class TaskViewScreen extends ConsumerWidget {
         title: Text(task?.title ?? 'Task'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => _navigateBack(context, task),
         ),
         actions: [
@@ -173,7 +174,7 @@ class TaskViewScreen extends ConsumerWidget {
       body: SafeArea(
         child: taskAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, st) => Center(child: Text('Error: $e')),
+          error: (e, st) => Center(child: Text(friendlyErrorMessage(e))),
           data: (task) {
             if (task == null) {
               return const Center(child: Text('Task not found'));
@@ -183,6 +184,7 @@ class TaskViewScreen extends ConsumerWidget {
             final isAssignee =
                 currentEmployee != null && task.assigneeIds.contains(currentEmployee.id);
             final isManager = currentEmployee?.isManager ?? false;
+            final isClient = currentEmployee?.isClient ?? false;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -209,14 +211,16 @@ class TaskViewScreen extends ConsumerWidget {
                     label: 'Deadline',
                     value: task.deadline != null ? DateFormat('yyyy-MM-dd').format(task.deadline!) : '—',
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  _InfoTile(
-                    icon: Icons.person,
-                    label: 'Assigned To',
-                    value: assigned.isNotEmpty
-                        ? assigned.map((e) => e.fullName).join(', ')
-                        : 'No employees assigned',
-                  ),
+                  if (!isClient) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _InfoTile(
+                      icon: Icons.person,
+                      label: 'Assigned To',
+                      value: assigned.isNotEmpty
+                          ? assigned.map((e) => e.fullName).join(', ')
+                          : 'No employees assigned',
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.lg),
                   Text('Description', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
@@ -295,6 +299,7 @@ class TaskViewScreen extends ConsumerWidget {
                                     shape: const CircleBorder(),
                                     child: IconButton(
                                       icon: const Icon(Icons.download, size: 16, color: Colors.white),
+                                      tooltip: 'Save photo',
                                       constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
                                       padding: EdgeInsets.zero,
                                       onPressed: () => _savePhoto(context, url),
