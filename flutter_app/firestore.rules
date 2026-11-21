@@ -1,5 +1,14 @@
 rules_version = '2';
 
+// DyadeSpace security rules.
+// Roles live on the user profile doc: users/{uid}.role
+//   admin (Sam) / manager (Alex) - full access
+//   worker / delivery - write only their own work
+//
+// Note on task READS: any active crew member can read tasks.
+// That is deliberate for v1 - a worker must be able to see whether
+// the task theirs depends on (e.g. Eli's weld repair) is Done.
+// Writes stay locked down per role below.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -7,132 +16,639 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function myDoc() {
-      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+    function myUserDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function myRole() {
-      return myDoc().role;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    function myProjectIds() {
-      return myDoc().projectIds;
+    // Active flag of the caller's own users doc. Only ever
+    // called after myUserDocExists() has passed (short-circuit),
+    // so the get() never runs on a missing doc.
+    function myActive() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
     }
 
+    // Member = signed in AND has a users doc AND that doc is
+    // active. A deactivated crew member (active == false) is
+    // locked out of everything, and an account with no users
+    // doc yet (fresh sign-up) can read/write nothing except
+    // the two sign-up-critical paths below (its matching
+    // invite, and creating its own users doc).
+    function isMember() {
+      return isSignedIn() && myUserDocExists() && myActive();
+    }
+
+    // The exists() check comes first (short-circuit): during the
+    // first sign-up the user doc does not exist yet, and reading
+    // .data.role of a missing doc would error the whole rule.
+    // The active check means a deactivated admin/manager loses
+    // their powers too — deactivation actually revokes access.
+    function isAdminOrManager() {
+      return isSignedIn() && myUserDocExists() && myActive() &&
+        (myRole() == 'admin' || myRole() == 'manager');
+    }
+
+    // Admin only (not manager). Used where a manager must not
+    // be able to act: role/active changes, admin invites, and
+    // the emailTransportReady flag.
     function isAdmin() {
-      return isSignedIn() && myRole() == 'admin';
+      return isSignedIn() && myUserDocExists() && myActive() &&
+        myRole() == 'admin';
     }
 
-    function isManager() {
-      return isSignedIn() && myRole() == 'manager';
+    // Parent conversation doc for the chat message rules below.
+    // A get() on a missing doc errors the rule (deny) — safe.
+    function conversationData(conversationId) {
+      return get(/databases/$(database)/documents/conversations/$(conversationId)).data;
     }
 
-    // Manager (or admin) rights over a specific project id.
-    function managesProject(projectId) {
-      return isAdmin() || (isManager() && projectId in myProjectIds());
+    // The id parts of a conversation doc: DMs are
+    // `dm_<uidA>_<uidB>`, team channels are `team_<teamId>`,
+    // broadcasts a bare auto-id. Auth uids and auto-ids never
+    // contain '_', so the split is unambiguous.
+    function conversationIdParts(conversationId) {
+      return conversationId.split('_');
     }
 
-    // Tasks may be quick-assigned directly to an employee with no project
-    // (projectId == null) — any manager can still touch those, matching the
-    // pre-existing "assign a task straight from Staff" flow; project-linked
-    // tasks are scoped to managers on that project.
-    function canManageTask(data) {
-      return isAdmin() || (isManager() && (data.projectId == null || data.projectId in myProjectIds()));
+    // A missing DM may be probed (get) by either of the two
+    // uids embedded in its id. Reading a missing doc returns
+    // nothing, so no data leaks; creating still goes through
+    // `allow create` on the match below.
+    function canProbeMissingDm(conversationId) {
+      return conversationIdParts(conversationId).size() == 3 &&
+        conversationIdParts(conversationId)[0] == 'dm' &&
+        request.auth.uid in [
+          conversationIdParts(conversationId)[1],
+          conversationIdParts(conversationId)[2]
+        ];
     }
 
-    function onlyChangedFields(fields) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    // A missing team channel may be probed (get) by a member
+    // of that team or by an admin/manager.
+    function canProbeMissingTeam(conversationId) {
+      return conversationIdParts(conversationId).size() == 2 &&
+        conversationIdParts(conversationId)[0] == 'team' &&
+        (isAdminOrManager() ||
+         (exists(/databases/$(database)/documents/teams/$(conversationIdParts(conversationId)[1])) &&
+          request.auth.uid in get(/databases/$(database)/documents/teams/$(conversationIdParts(conversationId)[1])).data.memberIds));
     }
 
-    match /employees/{uid} {
-      allow read: if isAdmin() ||
-        request.auth.uid == uid ||
-        (isSignedIn() && myRole() != 'client' && myProjectIds().hasAny(resource.data.projectIds));
-
-      // Signup: a user may create only their own employee doc, always as a
-      // client with no project — staff accounts are created only through the
-      // admin invite Cloud Function (which bypasses these rules via the Admin SDK).
-      allow create: if isSignedIn() && request.auth.uid == uid &&
-        request.resource.data.role == 'client' &&
-        request.resource.data.projectIds.size() == 0;
-
-      // Self-updates (profile fields, fcmTokens) are always allowed; only an
-      // admin may change `role` or `projectIds`.
-      allow update: if isSignedIn() && request.auth.uid == uid &&
-        onlyChangedFields(['firstName', 'lastName', 'phone', 'email', 'avatarUrl', 'fcmTokens']) ||
-        isAdmin();
-
-      allow delete: if isAdmin();
-    }
-
-    match /projects/{projectId} {
-      allow read: if isAdmin() ||
-        (isSignedIn() && request.auth.uid in resource.data.memberIds);
-      allow create, delete: if isAdmin();
-      // Admin manages membership/details; a manager on the project may edit
-      // its non-membership details but not who's on it (that's admin's job).
+    // --- User profiles: own doc writable by the owner (name/phone/
+    // language), readable by any active crew member (needed for
+    // assignee names). Role/active changes: admin ONLY. A manager
+    // updating a profile (their own or anyone else's) must leave
+    // `role` and `active` untouched, so a manager cannot promote
+    // themselves (or anyone) to admin or re-activate a deactivated
+    // user. A self-update keeps the same guard, so a deactivated
+    // worker cannot flip themselves back on. Creating one's own doc is
+    // one of the two sign-up-critical paths: a fresh account has
+    // no users doc yet, so it stays isSignedIn(), not isMember().
+    match /users/{uid} {
+      allow read: if isMember();
+      allow create: if isSignedIn() && request.auth.uid == uid;
       allow update: if isAdmin() ||
-        (isManager() && request.auth.uid in resource.data.memberIds &&
-         onlyChangedFields(['name', 'description', 'address', 'photoUrl']));
+        (isAdminOrManager() &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.active == resource.data.active) ||
+        (isMember() && request.auth.uid == uid &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.active == resource.data.active);
+      // Delete: admin/manager (offboarding), or the owner
+      // themselves — self-service account deletion. The
+      // `deleteMyAccount` Cloud Function removes the doc with
+      // the Admin SDK and does not need this rule, but the
+      // client-side delete path is allowed too, and deleting
+      // one's own doc only locks oneself out (isMember() goes
+      // false); it never touches anyone else's doc.
+      allow delete: if isAdminOrManager() ||
+        (isMember() && request.auth.uid == uid);
     }
 
-    match /tasks/{taskId} {
-      allow read: if isAdmin() ||
-        (isSignedIn() && request.auth.uid in resource.data.assigneeIds) ||
-        (isSignedIn() && resource.data.projectId != null && resource.data.projectId in myProjectIds());
-
-      allow create: if canManageTask(request.resource.data);
-
-      allow delete: if canManageTask(resource.data);
-
-      // Admin/scoped-manager can update any field; an assigned employee may
-      // only update `status` plus the completion photos/note.
-      allow update: if canManageTask(resource.data) ||
-        (isSignedIn() &&
-         request.auth.uid in resource.data.assigneeIds &&
-         onlyChangedFields(['status', 'completionPhotoUrls', 'completionNote']));
+    // --- Invites: created by admin/manager (People screen).
+    // The sign-up flow creates the Auth account first, then reads
+    // the invite as that signed-in user - the email on the invite
+    // must match the account's email token. The invited person may
+    // also mark their own invite 'accepted'. Unauthenticated reads
+    // are denied on purpose (invite emails are not public).
+    // Get and list are split: a get is admin/manager, or the
+    // email-token match for the sign-up flow (a fresh account has
+    // no users doc yet, so this branch deliberately does NOT
+    // require isMember()). List is admin/manager, plus that same
+    // email-token match — the sign-up lookup (findInvite) is a
+    // query, and queries are judged by the list rule, so a
+    // list rule without the email branch would make sign-up
+    // impossible: no new account could ever find its invite.
+    // The email branch still keeps the list private: a query
+    // must be constrained to the caller's own token email to
+    // pass, so an unfiltered list (or a query for someone
+    // else's email) is denied for everyone but admin/manager.
+    match /invites/{inviteId} {
+      allow get: if isAdminOrManager() ||
+        (isSignedIn() && request.auth.token.email == resource.data.email);
+      allow list: if isAdminOrManager() ||
+        (isSignedIn() && request.auth.token.email == resource.data.email);
+      // Create: admin/manager — but an invite with role 'admin'
+      // may only be created by an admin. A manager inviting an
+      // admin account would hand out admin access.
+      allow create: if isAdminOrManager() &&
+        (isAdmin() || request.resource.data.get('role', '') != 'admin');
+      allow delete: if isAdminOrManager();
+      // Update: admin/manager — but only an admin may change the
+      // invite's role (a manager must not flip a worker invite
+      // to admin). The invited person may only mark their own
+      // invite accepted (status + acceptedBy, nothing else), so
+      // they cannot rewrite their own invite's role either.
+      allow update: if (isAdminOrManager() &&
+          (isAdmin() ||
+           request.resource.data.get('role', null) ==
+             resource.data.get('role', null))) ||
+        (isMember() && request.auth.token.email == resource.data.email &&
+         request.resource.data.status == 'accepted' &&
+         request.resource.data.diff(resource.data)
+           .changedKeys().hasOnly(['status', 'acceptedBy']));
     }
 
+    // --- Sites: reference data. Read: crew. Write: admin/manager.
+    match /sites/{siteId} {
+      allow read: if isMember();
+      allow write: if isAdminOrManager();
+    }
+
+    // --- Teams: named groups of crew members. Read: crew.
+    // Write: admin/manager.
+    match /teams/{teamId} {
+      allow read: if isMember();
+      allow write: if isAdminOrManager();
+    }
+
+    // --- Stages: roadmap stages for a site. Read: crew.
+    // Write: admin/manager. The Cloud Functions also write a
+    // `readyNotifiedTaskIds` marker on the stage doc (Admin SDK,
+    // bypasses rules) to keep the stage-ready notification
+    // from firing twice for the same completion.
+    match /stages/{stageId} {
+      allow read: if isMember();
+      allow write: if isAdminOrManager();
+    }
+
+    // --- Roadmap templates: saved site roadmaps, reusable as
+    // a starting point. Read: crew. Create: admin/manager.
+    // No updates — a template is deleted and re-saved, never
+    // edited in place. Delete: admin/manager or the creator.
+    match /roadmap_templates/{templateId} {
+      allow read: if isMember();
+      allow create: if isAdminOrManager();
+      allow update: if false;
+      allow delete: if isAdminOrManager() ||
+        resource.data.createdBy == request.auth.uid;
+    }
+
+    // --- Material requests: a worker asks for materials and
+    // the request flows into Drew's run. Any active crew member
+    // may create a request, but only for themselves
+    // (requesterId must be their own uid, and the status must
+    // start requested). Any active crew member may read them —
+    // the driver needs the request to show its details on the
+    // stop, and the requester needs to see their own. Updates
+    // are locked down: admins/managers may approve or deny
+    // (status requested -> approved / denied, with a deny
+    // reason when denied) and may attach a request to a run
+    // (approved -> onRun with a runId), and the driver
+    // completing a request-linked pickup stop may mark it
+    // delivered (onRun -> delivered only). No deletes. The
+    // status field is a one-way street: a request can never
+    // move backwards or jump steps, and a denied request can
+    // never reach a run.
     match /materialRequests/{requestId} {
-      allow read: if isAdmin() ||
-        resource.data.requestedById == request.auth.uid ||
-        managesProject(resource.data.projectId);
-
-      allow create: if isSignedIn() && myRole() != 'client' &&
-        request.resource.data.requestedById == request.auth.uid &&
-        request.resource.data.status == 'pending' &&
-        request.resource.data.projectId in myProjectIds();
-
-      // Requester may edit their own request while still pending; a manager
-      // of the project (or admin) can only change the decision fields.
-      allow update: if (resource.data.requestedById == request.auth.uid &&
-          resource.data.status == 'pending' &&
-          onlyChangedFields(['items', 'photoUrls', 'notes'])) ||
-        (managesProject(resource.data.projectId) &&
-         onlyChangedFields(['status', 'managerNote', 'decidedById', 'decidedAt']));
-
-      allow delete: if isAdmin() ||
-        (resource.data.requestedById == request.auth.uid && resource.data.status == 'pending');
+      allow create: if isMember()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.status == 'requested'
+        && request.resource.data.keys().hasAll([
+          'requesterId', 'requesterName', 'siteId', 'item',
+          'quantity', 'status', 'createdAt',
+        ]);
+      allow read: if isMember();
+      allow update: if isMember()
+        && (
+          // Admin/manager: approve or deny a requested request.
+          (isAdminOrManager()
+            && resource.data.status == 'requested'
+            && request.resource.data.status in ['approved', 'denied']
+            && (request.resource.data.status != 'denied'
+              || (request.resource.data.denyReason is string
+                && request.resource.data.denyReason.size() > 0)))
+          // Admin/manager: attach an approved request to a run.
+          || (isAdminOrManager()
+            && resource.data.status == 'approved'
+            && request.resource.data.status == 'onRun'
+            && request.resource.data.runId is string
+            && request.resource.data.runId.size() > 0)
+          // The driver completing a request-linked pickup stop:
+          // onRun -> delivered, and nothing else changes.
+          || (resource.data.status == 'onRun'
+            && request.resource.data.status == 'delivered'
+            && request.resource.data.diff(resource.data)
+              .changedKeys().hasOnly(['status']))
+          // Carry-over: an onRun request whose stop rolls to
+          // the next day keeps its status and only re-points
+          // at the new run. Nothing else may change.
+          || (resource.data.status == 'onRun'
+            && request.resource.data.status == 'onRun'
+            && request.resource.data.diff(resource.data)
+              .changedKeys().hasOnly(['runId']))
+          // Admin/manager: a request whose stop was removed
+          // from its run goes back to approved, with the run
+          // link cleared, so it can be attached again.
+          || (isAdminOrManager()
+            && resource.data.status == 'onRun'
+            && request.resource.data.status == 'approved'
+            && request.resource.data.runId == null)
+        );
+      // Admins/managers may delete any request. The requester
+      // may delete their own request, but only while it is
+      // still awaiting a decision — a decided request is
+      // history, and a request on a run stays linked to its
+      // stop (if the stop later completes, the delivered
+      // update is skipped when the doc is gone).
+      allow delete: if isMember()
+        && (isAdminOrManager()
+          || (resource.data.requesterId == request.auth.uid
+            && resource.data.status == 'requested'));
     }
 
-    match /dailyReports/{reportId} {
-      allow read: if isAdmin() ||
-        resource.data.submittedById == request.auth.uid ||
-        managesProject(resource.data.projectId) ||
-        (isSignedIn() && myRole() == 'client' && resource.data.projectId in myProjectIds());
+    // --- Time entries: clock-in / clock-out pairs. A worker
+    // may only create their OWN entry (userId must be their
+    // uid). The client must NOT decide verification: at create,
+    // clockInVerified and flagged must both be false and no
+    // `hours` field may be present — a server function computes
+    // verified/flagged/hours. clockInAt must be within the 10
+    // minutes before the server's request.time (and not in the
+    // future): strict equality with request.time is unworkable
+    // because the client and server clocks differ by seconds,
+    // but a backdated or forged entry is still rejected.
+    // OFFLINE QUEUE: the client writes `queuedAt` (the client
+    // time of the tap) on every create, and batch.commit()
+    // resolves on the local-cache write — so a worker who
+    // clocks in with no signal and regains it more than 10
+    // minutes later would have the queued create rejected and
+    // the entry vanish. A create is therefore also accepted
+    // when clockInAt is within 2 minutes of queuedAt, queuedAt
+    // is not in the future, and queuedAt is at most 24 hours
+    // before the server time. The 2-minute window ties the
+    // clock-in to the tap; the 24-hour cap bounds the queue.
+    // A DAY entry (admins, managers, delivery) has an empty
+    // siteId/siteName — the rule only requires the keys to be
+    // present, so no exception is needed; the server flags it
+    // 'no-site-location' and the visits are its proof.
+    // Clock-out: the owner may change ONLY clockOutAt, and only
+    // on an entry that is still open (clockOutAt null).
+    // Admins/managers read and correct any entry (the Hours
+    // screen), but a correction may only change the site and
+    // the times (siteId, siteName, date, clockInAt, clockOutAt)
+    // — hours / verified / flagged are computed server-side and
+    // can never be set from the client, and userId can never
+    // change. No deletes: corrections are edits, so the record
+    // stays auditable.
+    // (Site lat/lng needs no new rule: sites are already
+    // admin/manager-write.)
+    match /timeEntries/{entryId} {
+      allow create: if isMember()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.clockInAt is timestamp
+        && request.resource.data.clockInAt <= request.time
+        && (request.resource.data.clockInAt >= request.time - duration.value(10, 'm')
+          || (('queuedAt' in request.resource.data)
+            && request.resource.data.queuedAt is timestamp
+            && request.resource.data.clockInAt >= request.resource.data.queuedAt - duration.value(2, 'm')
+            && request.resource.data.queuedAt <= request.time
+            && request.time - request.resource.data.queuedAt <= duration.value(24, 'h')))
+        && request.resource.data.clockInVerified == false
+        && request.resource.data.flagged == false
+        && !('hours' in request.resource.data)
+        // Coordinates, when supplied, must be real numbers in
+        // range (lat -90..90, lng -180..180): a spoofed in-fence
+        // fix must not sail through as verified:true.
+        // clockInLat/Lng are optional — a clock-in with no fix
+        // writes them null — so null/absent passes.
+        && (request.resource.data.get('clockInLat', null) == null ||
+            (request.resource.data.clockInLat is number &&
+             request.resource.data.clockInLat >= -90 &&
+             request.resource.data.clockInLat <= 90))
+        && (request.resource.data.get('clockInLng', null) == null ||
+            (request.resource.data.clockInLng is number &&
+             request.resource.data.clockInLng >= -180 &&
+             request.resource.data.clockInLng <= 180))
+        && request.resource.data.keys().hasAll([
+          'userId', 'userName', 'siteId', 'siteName', 'date',
+          'clockInAt', 'clockInVerified', 'flagged',
+        ]);
+      allow read: if isMember() && (
+        resource.data.userId == request.auth.uid || isAdminOrManager()
+      );
+      // Admin/manager correction (Hours screen): site and times
+      // only — see the comment above. Owner closing their own
+      // open entry: clockOutAt, plus the clock-out coordinates
+      // when the auto clock-out (or a site switch) knows where
+      // the worker left. Nothing else may change — hours /
+      // verified / flagged are server-side. Clock-out
+      // coordinates, when supplied, must be numbers in range,
+      // like the clock-in ones above (verifyClockOut re-verifies
+      // from them).
+      allow update: if
+        (isAdminOrManager() &&
+         request.resource.data.diff(resource.data)
+           .changedKeys().hasOnly(
+             ['siteId', 'siteName', 'date', 'clockInAt', 'clockOutAt']))
+        ||
+        (isMember()
+         && resource.data.userId == request.auth.uid
+         && resource.data.clockOutAt == null
+         && request.resource.data.clockOutAt != null
+         && request.resource.data.diff(resource.data)
+           .changedKeys().hasOnly(
+             ['clockOutAt', 'clockOutLat', 'clockOutLng'])
+         && (request.resource.data.get('clockOutLat', null) == null ||
+             (request.resource.data.clockOutLat is number &&
+              request.resource.data.clockOutLat >= -90 &&
+              request.resource.data.clockOutLat <= 90))
+         && (request.resource.data.get('clockOutLng', null) == null ||
+             (request.resource.data.clockOutLng is number &&
+              request.resource.data.clockOutLng >= -180 &&
+              request.resource.data.clockOutLng <= 180)));
+      allow delete: if false;
 
-      allow create: if isSignedIn() && myRole() != 'client' &&
-        request.resource.data.submittedById == request.auth.uid &&
-        request.resource.data.projectId in myProjectIds();
+      // --- Route breadcrumbs: one GPS point per open entry,
+      // written by the foreground tracking service (every 5
+      // minutes while clocked in) and the background auto-clock
+      // check (~15 minutes). Create: only the entry's owner,
+      // only while the entry is still open. Read: owner or
+      // admin/manager — the same split as the entry itself.
+      // Never updated or deleted by clients (the server deletes
+      // short auto entries and their breadcrumbs together).
+      match /breadcrumbs/{crumbId} {
+        allow create: if isMember()
+          && get(/databases/$(database)/documents/timeEntries/$(entryId)).data.userId == request.auth.uid
+          && get(/databases/$(database)/documents/timeEntries/$(entryId)).data.clockOutAt == null
+          && request.resource.data.lat is number
+          && request.resource.data.lng is number
+          && request.resource.data.lat >= -90
+          && request.resource.data.lat <= 90
+          && request.resource.data.lng >= -180
+          && request.resource.data.lng <= 180
+          && request.resource.data.at is timestamp;
+        allow read: if isMember() && (
+          get(/databases/$(database)/documents/timeEntries/$(entryId)).data.userId == request.auth.uid || isAdminOrManager()
+        );
+        allow update, delete: if false;
+      }
 
-      allow update, delete: if isAdmin() || resource.data.submittedById == request.auth.uid;
+      // --- Site visits: one doc per site the worker stayed at
+      // during the entry (10 continuous minutes inside the
+      // fence — see SiteVisit). Create: only the entry's owner,
+      // only while the entry is still open, with the arrival
+      // time and no departure yet. Update: only the owner,
+      // only to close an open visit (leftAt + durationMinutes
+      // — the close write). Read: owner or admin/manager.
+      // Never deleted: a visit is history, like the entry.
+      match /siteVisits/{visitId} {
+        allow create: if isMember()
+          && get(/databases/$(database)/documents/timeEntries/$(entryId)).data.userId == request.auth.uid
+          && get(/databases/$(database)/documents/timeEntries/$(entryId)).data.clockOutAt == null
+          && request.resource.data.siteId is string
+          && request.resource.data.siteName is string
+          && request.resource.data.arrivedAt is timestamp
+          && request.resource.data.leftAt == null;
+        allow read: if isMember() && (
+          get(/databases/$(database)/documents/timeEntries/$(entryId)).data.userId == request.auth.uid || isAdminOrManager()
+        );
+        allow update: if isMember()
+          && get(/databases/$(database)/documents/timeEntries/$(entryId)).data.userId == request.auth.uid
+          && resource.data.leftAt == null
+          && request.resource.data.leftAt is timestamp
+          && request.resource.data.diff(resource.data)
+            .changedKeys().hasOnly(['leftAt', 'durationMinutes']);
+        allow delete: if false;
+      }
     }
 
+    // --- Hours audit: one doc per admin/manager hours edit
+    // (entryId, editedBy, editedAt, before, after), written by
+    // the client app in the same batch as the entry edit (see
+    // TimeEntryService.updateEntry) — NOT by a Cloud Function.
+    // The batch means an edit never lands without its trail.
+    // Admin/manager only; never updated or deleted.
+    match /hoursAudit/{auditId} {
+      allow create, read: if isAdminOrManager();
+      allow update, delete: if false;
+    }
+
+    // --- Units: apartments inside a site. Read: crew. Write:
+    // admin/manager. Tasks link to a unit via their `unitId`
+    // field; the tasks rules below already gate task writes,
+    // so no change is needed there.
+    match /units/{unitId} {
+      allow read: if isMember();
+      allow write: if isAdminOrManager();
+    }
+
+    // --- Tasks.
+    match /tasks/{taskId} {
+      allow read: if isMember();
+      allow create, delete: if isAdminOrManager();
+      // Managers/admins can edit anything. A worker can only update
+      // a task assigned to them, and only the fields their own
+      // flows write: status and its timestamps (startedAt,
+      // finishedAt), pause state (pausedFrom), blocked reason /
+      // note, and completion photos (photoUrls, photoPending —
+      // startTask, completeTask, blockTask, pause/resumeTask,
+      // and the photo queue write exactly these). Title, due
+      // date, assigneeIds, stageId, unitId, dependencies and
+      // everything else stay admin/manager-only. Old docs
+      // carry only the single `assigneeId` string, so that field
+      // is accepted as a fallback — no migration needed.
+      // Narrow exception: any active crew member (in practice
+      // the delivery driver) may flip ONLY materialsOnSite - set
+      // when a drop-off linked to the task is completed. Every
+      // other field must be untouched by that write.
+      allow update: if isAdminOrManager() ||
+        (isMember() &&
+          (request.auth.uid in resource.data.get('assigneeIds', []) ||
+           resource.data.get('assigneeId', '') == request.auth.uid) &&
+          request.resource.data.diff(resource.data)
+            .affectedKeys().hasOnly([
+              'status', 'startedAt', 'finishedAt', 'pausedFrom',
+              'blockedReason', 'blockedNote',
+              'photoUrls', 'photoPending',
+            ])) ||
+        (isMember() &&
+         request.resource.data.diff(resource.data)
+           .affectedKeys().hasOnly(['materialsOnSite']));
+
+      // --- Task updates: the crew conversation on a task
+      // (notes + photos posted from the detail screen). Any
+      // active crew member can read the thread; a member may
+      // only post as themselves. Updates are immutable: no
+      // update or delete for anyone, admins included.
+      match /updates/{updateId} {
+        allow read: if isMember();
+        allow create: if isMember() &&
+          request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // --- Delivery runs: driver can read and update their own runs
+    // (marking stops complete); admin/manager full access.
+    // The driver branch may only touch the stops array and the
+    // odometer readings — never driverId, dates, or any other
+    // field. (Stops are stored embedded, so the driver rewrites
+    // the whole array to mark a stop complete; the array itself
+    // is the only stop-level field they may write.)
+    match /runs/{runId} {
+      allow read: if isAdminOrManager() ||
+        (isMember() && resource.data.driverId == request.auth.uid);
+      allow create, delete: if isAdminOrManager();
+      allow update: if isAdminOrManager() ||
+        (isMember() && resource.data.driverId == request.auth.uid &&
+         request.resource.data.diff(resource.data)
+           .affectedKeys().hasOnly(
+             ['stops', 'odometerStart', 'odometerEnd']));
+    }
+
+    // --- Day reports: written by the Cloud Function (Admin SDK,
+    // bypasses rules) or by an admin/manager using "Generate now".
+    match /dayReports/{reportId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdminOrManager();
+    }
+
+    // --- App settings (e.g. settings/eodReport: the end-of-day
+    // send channel 'push' / 'email' / 'both'). Admin/manager
+    // only; the Cloud Function reads it with the Admin SDK.
+    // One exception: `emailTransportReady` on the eodReport doc
+    // is admin-only. It must only be set once the Trigger Email
+    // extension is installed — a manager flipping it on with no
+    // extension would silently drop emailed reports (the mail
+    // docs pile up undelivered and the push fallback stops).
+    match /settings/{docId} {
+      allow read: if isAdminOrManager();
+      allow create: if isAdminOrManager() &&
+        (isAdmin() || !('emailTransportReady' in request.resource.data));
+      allow update: if isAdminOrManager() &&
+        (isAdmin() ||
+         !request.resource.data.diff(resource.data).affectedKeys()
+           .hasAny(['emailTransportReady']));
+      allow delete: if isAdminOrManager();
+    }
+
+    // --- End-of-day send requests: an admin asks the Cloud
+    // Function to send today's report now (Reports screen).
+    // Clients only create their own request; the function reads
+    // it with the Admin SDK, verifies the caller is an admin,
+    // sends, and marks it sent. No client reads/updates.
+    match /eodSendRequests/{requestId} {
+      allow create: if isAdminOrManager() &&
+        request.resource.data.requestedBy == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // --- Notifications: written by the Cloud Functions (Admin SDK,
+    // bypasses rules) - one doc per recipient per push. Each user
+    // reads/deletes only their own docs, and may update only the
+    // `read` flag on them: the update is checked against the
+    // pre-update userId, so without the field restriction a user
+    // could change their own doc's userId to a victim's uid and
+    // forge a notification into someone else's inbox. No client
+    // creates.
     match /notifications/{notificationId} {
-      // Written only by Cloud Functions via the Admin SDK, which bypasses
-      // these rules — clients only ever read/mark-read their own.
-      allow read, update, delete: if isSignedIn() && resource.data.recipientId == request.auth.uid;
+      allow read, delete: if isMember() &&
+        resource.data.userId == request.auth.uid;
+      allow update: if isMember() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data)
+          .changedKeys().hasOnly(['read']);
       allow create: if false;
+    }
+
+    // --- Chat conversations + messages: DMs, team channels,
+    // broadcast conversations (one per recipient). A
+    // conversation is readable by its participants; a team
+    // channel is additionally readable by admins/managers who
+    // are not members. Messages inherit access from their
+    // parent conversation doc (one extra read per evaluation —
+    // fine at this crew size). Broadcast creation is
+    // admin/manager only; DMs can be created by any participant;
+    // team channels by an admin/manager or a member of that
+    // team. Conversations are never deleted in v1; messages are
+    // immutable except for the `readBy` list.
+    //
+    // Why `allow get` is separate from `allow list`: a get on
+    // a not-yet-created doc has resource == null, so a rule
+    // reading resource.data errors and denies — which broke
+    // find-or-create (the app probes the doc before creating
+    // it). The id itself says who may probe a missing doc
+    // (see canProbeMissingDm / canProbeMissingTeam above);
+    // a missing broadcast id carries no such proof, so
+    // probing it stays denied.
+    match /conversations/{conversationId} {
+      allow get: if isMember() && (
+        (resource != null &&
+         (request.auth.uid in resource.data.participantIds ||
+          (resource.data.type == 'team' && isAdminOrManager()))) ||
+        (resource == null &&
+         (canProbeMissingDm(conversationId) ||
+          canProbeMissingTeam(conversationId)))
+      );
+      // Lists only ever evaluate existing docs, so the plain
+      // participant check is enough here.
+      allow list: if isMember() &&
+        (request.auth.uid in resource.data.participantIds ||
+         (resource.data.type == 'team' && isAdminOrManager()));
+      allow create: if isMember() &&
+        request.auth.uid in request.resource.data.participantIds &&
+        (
+          (request.resource.data.type == 'dm' &&
+           request.resource.data.participantIds.size() == 2) ||
+          (request.resource.data.type == 'broadcast' &&
+           isAdminOrManager() &&
+           request.resource.data.participantIds.size() == 2) ||
+          (request.resource.data.type == 'team' &&
+           (isAdminOrManager() ||
+            request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.memberIds))
+        );
+      // Preview / unread sync only — nobody can rewrite a
+      // conversation's type, creator, membership, or title.
+      // (participantIds and title were removed from this list:
+      // any participant could otherwise add an outsider to a
+      // DM, remove people, or retitle the conversation.)
+      allow update: if isMember() &&
+        (request.auth.uid in resource.data.participantIds ||
+         (resource.data.type == 'team' && isAdminOrManager())) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['lastMessage', 'lastSenderId', 'updatedAt',
+                    'unreadBy']);
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isMember() &&
+          (request.auth.uid in conversationData(conversationId).participantIds ||
+           (conversationData(conversationId).type == 'team' &&
+            isAdminOrManager()));
+        allow create: if isMember() &&
+          request.resource.data.senderId == request.auth.uid &&
+          (request.auth.uid in conversationData(conversationId).participantIds ||
+           (conversationData(conversationId).type == 'team' &&
+            isAdminOrManager()));
+        // Read receipts only.
+        allow update: if isMember() &&
+          request.auth.uid in conversationData(conversationId).participantIds &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readBy']);
+        allow delete: if false;
+      }
     }
   }
 }

@@ -1,118 +1,142 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class MaterialRequestStatus {
-  static const pending = 'pending';
-  static const approved = 'approved';
-  static const rejected = 'rejected';
-  static const fulfilled = 'fulfilled';
-
-  static const all = [pending, approved, rejected, fulfilled];
-
-  static String label(String status) {
-    switch (status) {
-      case pending:
-        return 'Pending';
-      case approved:
-        return 'Approved';
-      case rejected:
-        return 'Rejected';
-      case fulfilled:
-        return 'Fulfilled';
-      default:
-        return status;
-    }
-  }
-}
-
-class MaterialRequestItem {
-  final String name;
-  final String quantity;
-  final String? unit;
-  final String? note;
-
-  const MaterialRequestItem({
-    required this.name,
-    required this.quantity,
-    this.unit,
-    this.note,
-  });
-
-  factory MaterialRequestItem.fromMap(Map<String, dynamic> map) {
-    return MaterialRequestItem(
-      name: map['name'] as String? ?? '',
-      quantity: map['quantity'] as String? ?? '',
-      unit: map['unit'] as String?,
-      note: map['note'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {'name': name, 'quantity': quantity, 'unit': unit, 'note': note};
-  }
-}
+/// A worker's request for materials: what they need, how much,
+/// where, and by when. Flow, in order:
+///   requested -> approved -> onRun -> delivered
+///   requested -> denied (terminal)
+/// A request never becomes a task and never joins a run by
+/// itself: a manager attaches it to a delivery run as a pickup
+/// stop, and completing that stop marks it delivered (see
+/// notifyStopCompleted in functions/index.js).
+enum MaterialRequestStatus { requested, approved, onRun, delivered, denied }
 
 class MaterialRequest {
   final String id;
-  final String projectId;
-  final String requestedById;
-  final String requestedByName;
-  final List<MaterialRequestItem> items;
-  final List<String> photoUrls;
-  final String status;
-  final String? notes;
-  final String? managerNote;
-  final String? decidedById;
-  final DateTime? decidedAt;
+
+  /// Who asked, and their name at request time (names change;
+  /// the stored name is what the queue shows).
+  final String requesterId;
+  final String requesterName;
+
+  /// Where the materials are needed. taskId is null for a
+  /// site-level request (made from the site screen).
+  final String siteId;
+  final String? taskId;
+
+  final String item;
+  final int quantity;
+
+  /// "Needed by" date, day only; null means no date given.
+  final DateTime? neededBy;
+
+  final String note;
+  final String? photoUrl;
+  final MaterialRequestStatus status;
+
+  /// Why a manager refused it; only set when denied.
+  final String? denyReason;
+
+  /// The run the request is riding on (null until attached).
+  /// No stopId is stored: stops are renumbered and carried
+  /// over, so a stored stop id would go stale; the link back
+  /// lives on the stop (RunStop.materialRequestId).
+  final String? runId;
+
   final DateTime? createdAt;
 
   const MaterialRequest({
     required this.id,
-    required this.projectId,
-    required this.requestedById,
-    required this.requestedByName,
-    this.items = const [],
-    this.photoUrls = const [],
-    this.status = MaterialRequestStatus.pending,
-    this.notes,
-    this.managerNote,
-    this.decidedById,
-    this.decidedAt,
+    required this.requesterId,
+    required this.requesterName,
+    required this.siteId,
+    this.taskId,
+    required this.item,
+    this.quantity = 1,
+    this.neededBy,
+    this.note = '',
+    this.photoUrl,
+    this.status = MaterialRequestStatus.requested,
+    this.denyReason,
+    this.runId,
     this.createdAt,
   });
 
-  factory MaterialRequest.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
+  /// Open work for the managers: waiting on a decision, or
+  /// approved and waiting for a run.
+  bool get isOpen =>
+      status == MaterialRequestStatus.requested ||
+      status == MaterialRequestStatus.approved;
+
+  MaterialRequest copyWith({
+    MaterialRequestStatus? status,
+    String? denyReason,
+    String? runId,
+  }) {
     return MaterialRequest(
-      id: doc.id,
-      projectId: data['projectId'] as String? ?? '',
-      requestedById: data['requestedById'] as String? ?? '',
-      requestedByName: data['requestedByName'] as String? ?? '',
-      items: (data['items'] as List? ?? const [])
-          .map((e) => MaterialRequestItem.fromMap(Map<String, dynamic>.from(e as Map)))
-          .toList(),
-      photoUrls: List<String>.from(data['photoUrls'] as List? ?? const []),
-      status: data['status'] as String? ?? MaterialRequestStatus.pending,
-      notes: data['notes'] as String?,
-      managerNote: data['managerNote'] as String?,
-      decidedById: data['decidedById'] as String?,
-      decidedAt: (data['decidedAt'] as Timestamp?)?.toDate(),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      id: id,
+      requesterId: requesterId,
+      requesterName: requesterName,
+      siteId: siteId,
+      taskId: taskId,
+      item: item,
+      quantity: quantity,
+      neededBy: neededBy,
+      note: note,
+      photoUrl: photoUrl,
+      status: status ?? this.status,
+      denyReason: denyReason ?? this.denyReason,
+      runId: runId ?? this.runId,
+      createdAt: createdAt,
+    );
+  }
+
+  factory MaterialRequest.fromFirestore(DocumentSnapshot doc) {
+    return MaterialRequest.fromMap(
+        doc.id, doc.data() as Map<String, dynamic>? ?? {});
+  }
+
+  factory MaterialRequest.fromMap(String id, Map<String, dynamic> map) {
+    return MaterialRequest(
+      id: id,
+      requesterId: map['requesterId'] as String? ?? '',
+      requesterName: map['requesterName'] as String? ?? '',
+      siteId: map['siteId'] as String? ?? '',
+      taskId: map['taskId'] as String?,
+      item: map['item'] as String? ?? '',
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+      neededBy: map['neededBy'] is Timestamp
+          ? (map['neededBy'] as Timestamp).toDate()
+          : null,
+      note: map['note'] as String? ?? '',
+      photoUrl: map['photoUrl'] as String?,
+      status: MaterialRequestStatus.values.firstWhere(
+        (s) => s.name == map['status'],
+        orElse: () => MaterialRequestStatus.requested,
+      ),
+      denyReason: map['denyReason'] as String?,
+      runId: map['runId'] as String?,
+      createdAt: map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'projectId': projectId,
-      'requestedById': requestedById,
-      'requestedByName': requestedByName,
-      'items': items.map((e) => e.toMap()).toList(),
-      'photoUrls': photoUrls,
-      'status': status,
-      'notes': notes,
-      'managerNote': managerNote,
-      'decidedById': decidedById,
-      'decidedAt': decidedAt != null ? Timestamp.fromDate(decidedAt!) : null,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'requesterId': requesterId,
+      'requesterName': requesterName,
+      'siteId': siteId,
+      'taskId': taskId,
+      'item': item,
+      'quantity': quantity,
+      'neededBy': neededBy == null ? null : Timestamp.fromDate(neededBy!),
+      'note': note,
+      'photoUrl': photoUrl,
+      'status': status.name,
+      'denyReason': denyReason,
+      'runId': runId,
+      'createdAt':
+          createdAt == null ? null : Timestamp.fromDate(createdAt!),
     };
   }
 }

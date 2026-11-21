@@ -1,0 +1,128 @@
+# DyadeSpace CI — analyze, test, build on every push; deploy on main.
+#
+# Secrets to add (repo Settings > Secrets and variables > Actions):
+#   FIREBASE_OPTIONS_DART — the full contents of lib/firebase_options.dart
+#     (copy it from your Mac; the file is gitignored, so CI cannot
+#     see it otherwise). Needed by the analyze/build jobs.
+#   FIREBASE_SERVICE_ACCOUNT_DYADESPACE — a Firebase service-account
+#     JSON for your Firebase project (console > Project settings >
+#     Service accounts > Generate new private key). Needed by the
+#     deploy job; the job is skipped entirely until it exists.
+#
+# Functions deploy safety: the console still holds v1 Cloud
+# Functions that must NOT be deleted, so the deploy job never
+# runs `firebase deploy --only functions --force`. Instead it
+# deploys exactly the functions exported by functions/index.js
+# (computed below), which never triggers the delete prompt.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+
+      - name: Generate lib/firebase_options.dart
+        if: secrets.FIREBASE_OPTIONS_DART != ''
+        run: printf '%s' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+
+      - name: Check firebase_options.dart exists
+        run: |
+          if [ ! -f lib/firebase_options.dart ]; then
+            echo "::error::lib/firebase_options.dart is missing. Add the FIREBASE_OPTIONS_DART secret (repo Settings > Secrets and variables > Actions) with the file contents from your Mac."
+            exit 1
+          fi
+
+      - run: flutter pub get
+      - run: flutter analyze
+
+      - name: Dart tests (only if a test/ folder exists)
+        run: |
+          if [ -d test ]; then flutter test; else echo "No Dart tests yet — skipping."; fi
+
+      - name: Cloud Functions rules tests
+        working-directory: functions
+        run: |
+          npm ci
+          npm test
+
+  build:
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+
+      - name: Generate lib/firebase_options.dart
+        if: secrets.FIREBASE_OPTIONS_DART != ''
+        run: printf '%s' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+
+      - name: Check firebase_options.dart exists
+        run: |
+          if [ ! -f lib/firebase_options.dart ]; then
+            echo "::error::lib/firebase_options.dart is missing. Add the FIREBASE_OPTIONS_DART secret (repo Settings > Secrets and variables > Actions) with the file contents from your Mac."
+            exit 1
+          fi
+
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: flutter build web --release
+
+  deploy:
+    # Firestore + Storage + Functions, main branch only, and only
+    # once the Firebase service-account secret exists.
+    needs: build
+    if: github.ref == 'refs/heads/main' && secrets.FIREBASE_SERVICE_ACCOUNT_DYADESPACE != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install functions dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Deploy Firestore + Storage + Functions
+        run: |
+          npm install -g firebase-tools@15.36.0
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_DYADESPACE" > /tmp/service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json
+          # Deploy exactly the functions this codebase exports, so
+          # the console's v1 functions are never offered for
+          # deletion (no --force, ever).
+          FUNCS=$(grep -oP '^exports\.\K[a-zA-Z0-9_]+' functions/index.js | sed 's/^/functions:/' | paste -sd,)
+          firebase deploy --only "firestore,storage,$FUNCS" --project your-firebase-project-id --non-interactive
+          rm -f /tmp/service-account.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT_DYADESPACE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DYADESPACE }}

@@ -1,12 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
-    <!-- Required on Android 13+ to show FCM notifications. -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Auto clock-in: background location, checked about every
+         15 minutes while the worker has it on. Requested at
+         runtime (Settings toggle) — the manifest entry alone
+         grants nothing. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Route trail while clocked in: the foreground service
+         (location type) keeps the 5-minute sampler alive and
+         shows the persistent "Recording your work route"
+         notification. Android 14+ requires the type on the
+         service declaration below, not just the permission. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <application
-        android:label="dyadespace"
+        android:label="dyadespace_scaffold"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,6 +46,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Foreground service for the work-route trail
+             (flutter_foreground_task). Do not change the service
+             name. foregroundServiceType="location" is required
+             on Android 14+ — without it the service cannot
+             start. The service only runs while someone is
+             clocked in. -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

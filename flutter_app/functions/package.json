@@ -1,23 +1,19 @@
 {
   "name": "dyadespace-functions",
-  "description": "Cloud Functions for DyadeSpace — notification triggers for tasks, material requests, daily reports, and staff assignment changes.",
+  "description": "DyadeSpace Cloud Functions: end-of-day report + blocked-task alerts",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
-  "main": "lib/index.js",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "serve": "npm run build && firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "test": "JDK_JAVA_OPTIONS='-Djava.net.preferIPv4Stack=true' firebase emulators:exec --only firestore,storage 'node --test test/firestore.rules.test.js' && node --test test/clock_rules_test.js"
   },
   "dependencies": {
-    "firebase-admin": "^12.6.0",
-    "firebase-functions": "^5.1.1"
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
-  },
-  "private": true
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "firebase": "^13.3.0"
+  }
 }
